@@ -21,6 +21,8 @@ import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.model.PutObjectResponse;
 
 public class BosFileSystem extends FileSystem {
+	private static final String DIR_SUFFIX = ".exist";
+	
 	BosClient client = BosInitiator.getClient();
 
 	@Override
@@ -116,6 +118,38 @@ public class BosFileSystem extends FileSystem {
         return list.iterator();
 	}
 	
+	private void isFileExist() {
+		
+	}
+	
+	private boolean isDir(String absolutePathStr) {
+		String[] bucket2Key = getBucket2Key(absolutePathStr);
+		String key = addSep(bucket2Key[1]) + DIR_SUFFIX;
+		try {
+			client.getObject(bucket2Key[0], bucket2Key[1]);
+			return true;
+		} catch (BceServiceException e) {
+			if (!"NoSuchKey".equals(e.getErrorCode())) {
+				throw e;
+			}
+		}
+		return false;
+	}
+	
+	private boolean isDirEmpty(String absolutePathStr) {
+		String[] bucket2Key = getBucket2Key(absolutePathStr);
+		String key = addSep(bucket2Key[1]);
+		try {
+			client.(bucket2Key[0], bucket2Key[1]);
+			return true;
+		} catch (BceServiceException e) {
+			if (!"NoSuchKey".equals(e.getErrorCode())) {
+				throw e;
+			}
+		}
+		return false;
+	}
+	
 	/** 只能删除文件，不能删除文件夹 */
 	protected void deleteFile(String absolutePathStr) {
 		String[] bucket2Key = getBucket2Key(absolutePathStr);
@@ -130,7 +164,7 @@ public class BosFileSystem extends FileSystem {
 	
 	protected void createDirectory(String path, FileAttribute<?>[] attrs) {
 		String[] bucket2Key = getBucket2Key(path);
-		String key = addSep(removeSplashHead(bucket2Key[1], false)) + ".exist";
+		String key = addSep(removeSplashHead(bucket2Key[1], false)) + DIR_SUFFIX;
 		client.putObject(bucket2Key[0], key, new byte[]{1});
 	}
 	
@@ -142,7 +176,7 @@ public class BosFileSystem extends FileSystem {
 	 * @param path
 	 * @return
 	 */
-	private String[] getBucket2Key(String path) {
+	private String[] getBucket2KeyWithBucket(String path) {
 		path = removeSplashHead(path, false);
 		String uploadPath = path.replaceFirst(BosFileSystemProvider.SCHEME + ":", "");
 		uploadPath = removeSplashHead(uploadPath, false);
@@ -150,6 +184,21 @@ public class BosFileSystem extends FileSystem {
 		String bucket = bucketName[0];
 		String key = uploadPath.replaceFirst(bucket, "");
 		return new String[]{bucket, key};
+	}
+	
+	/**
+	 * 输入类似 bos:/myfile/test.txt
+	 * 类型
+	 * novelbio是bucket
+	 * myfile/test.txt 是 key
+	 * @param path
+	 * @return
+	 */
+	private String[] getBucket2Key(String path) {
+		path = removeSplashHead(path, false);
+		String uploadPath = path.replaceFirst(BosFileSystemProvider.SCHEME + ":", "");
+		uploadPath = removeSplashHead(uploadPath, false);
+		return new String[]{PathDetail.getBucket(), uploadPath};
 	}
 	
 	/** 将文件开头的"//"这种多个的去除

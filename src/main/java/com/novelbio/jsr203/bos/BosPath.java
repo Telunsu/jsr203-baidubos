@@ -501,11 +501,11 @@ public class BosPath implements Path {
 	}
 
 	void delete() throws IOException {
-		this.bfs.deleteFile(toAbsolutePathStr(), true);
+		this.bfs.deleteFile(toAbsolutePathStr());
 	}
 
 	void deleteIfExists() throws IOException {
-		this.bfs.deleteFile(toAbsolutePathStr(), false);
+		this.bfs.deleteFile(toAbsolutePathStr());
 	}
 
 	void move(BosPath target, CopyOption... options) throws IOException {

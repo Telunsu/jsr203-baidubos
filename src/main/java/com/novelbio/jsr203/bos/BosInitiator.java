@@ -1,16 +1,18 @@
 package com.novelbio.jsr203.bos;
 
 import java.io.IOException;
-import java.util.List;
 
 import com.baidubce.BceServiceException;
 import com.baidubce.auth.DefaultBceCredentials;
 import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.BosClientConfiguration;
+import com.baidubce.services.bos.model.BosObject;
 import com.baidubce.services.bos.model.BosObjectSummary;
+import com.baidubce.services.bos.model.DeleteObjectRequest;
 import com.baidubce.services.bos.model.GetObjectRequest;
+import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
-import com.baidubce.services.bos.model.PutObjectResponse;
+import com.baidubce.services.moladb.model.DeleteItemRequest;
 
 public class BosInitiator {
 //	  String ACCESS_KEY_ID = <your-access-key-id>;                   // 用户的Access Key ID
@@ -42,38 +44,55 @@ public class BosInitiator {
 //		    PutObjectRequest request = new PutObjectRequest("novelbio", "testfile/test.log", file);
 //		    request.withStorageClass(BosClient.STORAGE_CLASS_STANDARD_IA);
 //		    PutObjectResponse response = client.deleteObject(bucketName, key);
-		try {
-		    client.deleteObject(PathDetail.getBucket(), "testfile/test.log");
-		} catch (BceServiceException e) {
-			if (!"NoSuchKey".equals(e.getErrorCode())) {
-				throw e;
-			} else {
-				System.out.println("no such key");
-			}
-		}
-	    client.putObject("novelbio", "testfile/test.log2", "2");
+		
+			client.putObject("novelbio", "myfile/test/", "");
+			client.putObject("novelbio", "myfile/test", "");
 
-//		    
-//		    System.out.println(response.getETag());
-//		    
-//		    response = client.putObject("novelbio", "test1/1", "er");
-//		    
-//		    System.out.println(response.getETag());
-//		    response = client.putObject("novelbio", "test1/1", "er");
-//		    
-//		    System.out.println(response.getETag());
-//			GetObjectRequest getObjectRequest = new GetObjectRequest("novelbio", "testfile/test.log22");
-//			getObjectRequest.setRange(5000, 5100);
-//			
-//			ListObjectsResponse lsRes = client.listObjects("novelbio", "testfile/test.log");
-//		    List<BosObjectSummary> lsBos = lsRes.getContents();
-//		    for (BosObjectSummary bosObjectSummary : lsBos) {
-//				System.out.println(bosObjectSummary.getKey());
+//			client.deleteObject("novelbio", "myfile/test/");
+		
+//		try {
+//			ListObjectsRequest listObjectsRequest = new ListObjectsRequest("novelbio");
+//
+//			// "/" 为文件夹的分隔符
+//			listObjectsRequest.setDelimiter("/");
+//
+//			// 列出fun目录下的所有文件和文件夹
+//			listObjectsRequest.setPrefix("test/dir/");
+//
+//			ListObjectsResponse listing = client.listObjects(listObjectsRequest);		
+//			for (BosObjectSummary bos : listing.getContents()) {
+//				System.out.println(bos.getKey());
 //			}
-//		    System.out.println();
+//			for (String prefix : listing.getCommonPrefixes()) {
+//				System.out.println(prefix);
+//			}
+//			System.out.println();
+//			
+//			DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest();
+//			deleteObjectRequest.
+//			client.deleteObject(request);
+//		} catch (BceServiceException e) {
+//			if (!"NoSuchKey".equals(e.getErrorCode())) {
+//				throw e;
+//			} else {
+//				System.out.println("no such key");
+//			}
+//		}
 		
+//		    
+//		    System.out.println(response.getETag());
+//		    
+//		    response = client.putObject("novelbio", "test1/1", "er");
+//		    
+//		    System.out.println(response.getETag());
+//		    response = client.putObject("novelbio", "test1/1", "er");
+//		    
+//		    System.out.println(response.getETag());
+//			GetObjectRequest getObjectRequest = new GetObjectRequest("novelbio", "test/dir/fse");
+//			BosObject bosObject = client.getObject(getObjectRequest);
+//			System.out.println(bosObject.getKey());
 		
-		
+//			client.deleteObject(bucketName, key);
 
 		
 		
