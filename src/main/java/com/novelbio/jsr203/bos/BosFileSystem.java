@@ -3,6 +3,7 @@ package com.novelbio.jsr203.bos;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.CopyOption;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -20,27 +21,32 @@ import com.baidubce.BceServiceException;
 import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.model.PutObjectResponse;
 
+/**
+ * 百度bos文件系统
+ * 
+ * @author novelbio
+ *
+ */
 public class BosFileSystem extends FileSystem {
 	private static final String DIR_SUFFIX = ".exist";
-	
+
 	BosClient client = BosInitiator.getClient();
 
 	@Override
 	public FileSystemProvider provider() {
-		// TODO Auto-generated method stub
-		return null;
+		return new BosFileSystemProvider();
 	}
 
 	@Override
 	public void close() throws IOException {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	final String getString(byte[] name) {
-        return new String(name);
-    }
-	
+		return new String(name);
+	}
+
 	@Override
 	public boolean isOpen() {
 		// TODO Auto-generated method stub
@@ -101,27 +107,26 @@ public class BosFileSystem extends FileSystem {
 		return null;
 	}
 
-	public Iterator<Path> iteratorOf(BosPath path,
-			java.nio.file.DirectoryStream.Filter<? super Path> filter) throws IOException, URISyntaxException 
-	{
-		
-		
-		  //FileStatus inode = this.fs.getFileStatus(path.getRawResolvedPath());
-        //if (inode.isDirectory() == false)
-        //    throw new NotDirectoryException(getString(path.getResolvedPath()));
-        List<Path> list = new ArrayList<Path>();
-        for (FileStatus stat : this.fs.listStatus(path.getRawResolvedPath())) {
-            HadoopPath hp = new HadoopPath(this, stat.getPath().toUri().getPath().getBytes());
-            if (filter == null || filter.accept(hp))
-                list.add(hp);
-        }
-        return list.iterator();
+	public Iterator<Path> iteratorOf(BosPath path, java.nio.file.DirectoryStream.Filter<? super Path> filter) throws IOException, URISyntaxException {
+
+		// FileStatus inode = this.fs.getFileStatus(path.getRawResolvedPath());
+		// if (inode.isDirectory() == false)
+		// throw new NotDirectoryException(getString(path.getResolvedPath()));
+		List<Path> list = new ArrayList<Path>();
+		// for (FileStatus stat : this.fs.listStatus(path.getRawResolvedPath()))
+		// {
+		// HadoopPath hp = new HadoopPath(this,
+		// stat.getPath().toUri().getPath().getBytes());
+		// if (filter == null || filter.accept(hp))
+		// list.add(hp);
+		// }
+		return list.iterator();
 	}
-	
+
 	private void isFileExist() {
-		
+
 	}
-	
+
 	private boolean isDir(String absolutePathStr) {
 		String[] bucket2Key = getBucket2Key(absolutePathStr);
 		String key = addSep(bucket2Key[1]) + DIR_SUFFIX;
@@ -135,12 +140,12 @@ public class BosFileSystem extends FileSystem {
 		}
 		return false;
 	}
-	
+
 	private boolean isDirEmpty(String absolutePathStr) {
 		String[] bucket2Key = getBucket2Key(absolutePathStr);
 		String key = addSep(bucket2Key[1]);
 		try {
-			client.(bucket2Key[0], bucket2Key[1]);
+			// client.(bucket2Key[0], bucket2Key[1]);
 			return true;
 		} catch (BceServiceException e) {
 			if (!"NoSuchKey".equals(e.getErrorCode())) {
@@ -149,7 +154,7 @@ public class BosFileSystem extends FileSystem {
 		}
 		return false;
 	}
-	
+
 	/** 只能删除文件，不能删除文件夹 */
 	protected void deleteFile(String absolutePathStr) {
 		String[] bucket2Key = getBucket2Key(absolutePathStr);
@@ -161,18 +166,17 @@ public class BosFileSystem extends FileSystem {
 			}
 		}
 	}
-	
+
 	protected void createDirectory(String path, FileAttribute<?>[] attrs) {
 		String[] bucket2Key = getBucket2Key(path);
 		String key = addSep(removeSplashHead(bucket2Key[1], false)) + DIR_SUFFIX;
-		client.putObject(bucket2Key[0], key, new byte[]{1});
+		client.putObject(bucket2Key[0], key, new byte[] { 1 });
 	}
-	
+
 	/**
-	 * 输入类似 bos:/novelbio/myfile/test.txt
-	 * 类型
-	 * novelbio是bucket
-	 * myfile/test.txt 是 key
+	 * 输入类似 bos:/novelbio/myfile/test.txt 类型 novelbio是bucket myfile/test.txt 是
+	 * key
+	 * 
 	 * @param path
 	 * @return
 	 */
@@ -183,14 +187,12 @@ public class BosFileSystem extends FileSystem {
 		String[] bucketName = uploadPath.split("/+");
 		String bucket = bucketName[0];
 		String key = uploadPath.replaceFirst(bucket, "");
-		return new String[]{bucket, key};
+		return new String[] { bucket, key };
 	}
-	
+
 	/**
-	 * 输入类似 bos:/myfile/test.txt
-	 * 类型
-	 * novelbio是bucket
-	 * myfile/test.txt 是 key
+	 * 输入类似 bos:/myfile/test.txt 类型 novelbio是bucket myfile/test.txt 是 key
+	 * 
 	 * @param path
 	 * @return
 	 */
@@ -198,12 +200,15 @@ public class BosFileSystem extends FileSystem {
 		path = removeSplashHead(path, false);
 		String uploadPath = path.replaceFirst(BosFileSystemProvider.SCHEME + ":", "");
 		uploadPath = removeSplashHead(uploadPath, false);
-		return new String[]{PathDetail.getBucket(), uploadPath};
+		return new String[] { PathDetail.getBucket(), uploadPath };
 	}
-	
-	/** 将文件开头的"//"这种多个的去除
+
+	/**
+	 * 将文件开头的"//"这种多个的去除
+	 * 
 	 * @param fileName
-	 * @param keepOne 是否保留一个“/”
+	 * @param keepOne
+	 *            是否保留一个“/”
 	 * @return
 	 */
 	private static String removeSplashHead(String fileName, boolean keepOne) {
@@ -221,7 +226,7 @@ public class BosFileSystem extends FileSystem {
 		}
 		return fileNameThis;
 	}
-	
+
 	/**
 	 * 添加文件分割符
 	 * 
@@ -233,10 +238,24 @@ public class BosFileSystem extends FileSystem {
 		if (!path.endsWith(File.separator)) {
 			if (!path.equals("")) {
 				path = path + File.separator;
-            }
+			}
 		}
 		return path;
 	}
 
+	public void moveFile(String absolutePathStr, String absolutePathStr2, CopyOption[] options) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void copyFile(boolean b, byte[] resolvedPath, byte[] resolvedPath2, CopyOption[] options) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public boolean exists(Path rawResolvedPath) throws IOException{
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }

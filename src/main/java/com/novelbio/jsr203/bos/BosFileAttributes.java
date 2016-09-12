@@ -36,7 +36,7 @@ public class BosFileAttributes implements BasicFileAttributes {
 
     @Override
     public FileTime creationTime() {
-        return FileTime.from(this.fileStatus.getModificationTime(), TimeUnit.MILLISECONDS);
+        return FileTime.from(this.fileStatus.getModification_time(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class BosFileAttributes implements BasicFileAttributes {
 
     @Override
     public boolean isDirectory() {
-        return this.fileStatus.isDirectory();
+        return this.fileStatus.isDir();
     }
 
     @Override
@@ -56,27 +56,28 @@ public class BosFileAttributes implements BasicFileAttributes {
 
     @Override
     public boolean isRegularFile() {
-        return this.fileStatus.isFile();
+        return !this.fileStatus.isDir();
     }
 
     @Override
     public boolean isSymbolicLink() {
-        return this.fileStatus.isSymlink();
+//        return this.fileStatus.isSymlink();
+    	return false;
     }
 
     @Override
     public FileTime lastAccessTime() {
-        return FileTime.from(this.fileStatus.getAccessTime(), TimeUnit.MILLISECONDS);
+        return FileTime.from(this.fileStatus.getAccess_time(), TimeUnit.MILLISECONDS);
     }
 
     @Override
     public FileTime lastModifiedTime() {
-        return FileTime.from(this.fileStatus.getModificationTime(), TimeUnit.MILLISECONDS);
+        return FileTime.from(this.fileStatus.getModification_time(), TimeUnit.MILLISECONDS);
     }
 
     @Override
     public long size() {
-        return this.fileStatus.getLen();
+        return this.fileStatus.getLength();
     }
 
     @Override

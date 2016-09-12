@@ -44,9 +44,9 @@ public class BosDirectoryStream implements DirectoryStream<Path> {
         this.filter = filter;
         
         // sanity check
-        FileStatus stat = BosPath.getFileSystem().getHDFS().getFileStatus(BosPath.getRawResolvedPath());
-        if (!stat.isDirectory())
-            throw new NotDirectoryException(BosPath.toString());
+//        FileStatus stat = BosPath.getFileSystem().getHDFS().getFileStatus(BosPath.getRawResolvedPath());
+//        if (!stat.isDirectory())
+//            throw new NotDirectoryException(BosPath.toString());
     }
 
     @Override

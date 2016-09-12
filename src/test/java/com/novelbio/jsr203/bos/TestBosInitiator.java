@@ -1,53 +1,66 @@
 package com.novelbio.jsr203.bos;
 
-import java.io.IOException;
+import java.io.File;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.baidubce.BceServiceException;
-import com.baidubce.auth.DefaultBceCredentials;
 import com.baidubce.services.bos.BosClient;
-import com.baidubce.services.bos.BosClientConfiguration;
-import com.baidubce.services.bos.model.BosObject;
 import com.baidubce.services.bos.model.BosObjectSummary;
 import com.baidubce.services.bos.model.DeleteObjectRequest;
-import com.baidubce.services.bos.model.GetObjectRequest;
 import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
-import com.baidubce.services.moladb.model.DeleteItemRequest;
+import com.baidubce.services.bos.model.PutObjectRequest;
 
-public class BosInitiator {
-	    
-	public static String ACCESS_KEY_ID = PathDetail.getAccessKey();
-	public static String SECRET_ACCESS_KEY = PathDetail.getAccessKeySecret();
-	public static String endpoint = PathDetail.getEndpoint();
-   static BosClient client; 
+public class TestBosInitiator {
+
+	String bucket = PathDetail.getBucket();
+	String basePath = "fansTest/";
+	BosClient client;
 	
-    public static void main(String[] args) throws IOException {
-		BosClient client = BosInitiator.getClient();
-//	    client.createBucket("novelbio");                               //指定Bucket名称
-//
-//		 List<BucketSummary> buckets = client.listBuckets().getBuckets();
-//
-//		    // 遍历Bucket
-//		    for (BucketSummary bucket : buckets) {
-//		        System.out.println(bucket.getName());
-//		    }
-//		    ListObjectsResponse listing = client.listObjects("novelbrain");
-//
-//		    // 遍历所有Object
-//		    for (BosObjectSummary objectSummary : listing.getContents()) {
-//		        System.out.println("ObjectKey: " + objectSummary.getKey());
-//		    }
-		    
-//		    File file = new File("/home/novelbio/software/yarn-novelbio-resourcemanager-novelbio170.log");
-//		    PutObjectRequest request = new PutObjectRequest("novelbio", "testfile/test.log", file);
-//		    request.withStorageClass(BosClient.STORAGE_CLASS_STANDARD_IA);
-//		    PutObjectResponse response = client.deleteObject(bucketName, key);
-		
-			client.putObject("novelbio", "myfile/test/", "");
-			client.putObject("novelbio", "myfile/test", "");
-
-//			client.deleteObject("novelbio", "myfile/test/");
-		
+	@Before
+	public void Before() {
+		client = BosInitiator.getClient();
+		Assert.assertNotNull(client);
+	}
+	
+	@Test
+	public void testGetClient() {
+		try {
+			Assert.assertTrue(client.doesBucketExist(bucket));
+			/*
+			 * 测试,这个需购买后才能使用.
+				List<BucketSummary> buckets = client.listBuckets().getBuckets();
+				// 遍历Bucket
+				for (BucketSummary bucket : buckets) {
+					System.out.println(bucket.getName());
+				}
+			 */
+			
+			// 遍历所有Object
+			ListObjectsResponse lsObjs = client.listObjects(bucket);
+			for (BosObjectSummary objectSummary : lsObjs.getContents()) {
+				System.out.println("ObjectKey: " + objectSummary.getKey());
+			}
+			
+			String key1 = basePath + "myfile/test";
+			String key2 = basePath + "myfile/test/";
+			String key3 = basePath + "myfile/test2/";
+			client.putObject(bucket, key1, "");
+			client.putObject(bucket, key2, "");
+			client.putObject(bucket, key3, new File("/home/novelbio/data/object相关接口快速参考卡片_打印版.pdf"));
+//			File file = new File("testFile/test.txt");
+//			PutObjectRequest request = new PutObjectRequest("novelbio", "testfile/test.log", file);
+//			// XXX 
+//			request.withStorageClass(BosClient.STORAGE_CLASS_STANDARD_IA);
+			
+			lsViewAllFile();
+			
+			client.deleteObject(bucket, key1);
+			client.deleteObject(bucket, key2);
+			
 //		try {
 //			ListObjectsRequest listObjectsRequest = new ListObjectsRequest("novelbio");
 //
@@ -76,7 +89,7 @@ public class BosInitiator {
 //				System.out.println("no such key");
 //			}
 //		}
-		
+			
 //		    
 //		    System.out.println(response.getETag());
 //		    
@@ -89,9 +102,9 @@ public class BosInitiator {
 //			GetObjectRequest getObjectRequest = new GetObjectRequest("novelbio", "test/dir/fse");
 //			BosObject bosObject = client.getObject(getObjectRequest);
 //			System.out.println(bosObject.getKey());
-		
+			
 //			client.deleteObject(bucketName, key);
-
+			
 //		    InputStream is = object.getObjectContent();
 //		    BufferedReader bfR = new BufferedReader(new InputStreamReader(is));
 //		    String content = "";
@@ -118,24 +131,39 @@ public class BosInitiator {
 //			}
 //		    // 获取ObjectMeta
 //		    System.out.println();
-		    
-    }
-    
-    static {
-    	initial();
-    }
-	
-	private static void initial() {
-	    BosClientConfiguration config = new BosClientConfiguration();
-    	 client = new BosClient(config);
-	    config.setCredentials(new DefaultBceCredentials(ACCESS_KEY_ID, SECRET_ACCESS_KEY));
-	    config.setMaxConnections(10);
-	    config.setEndpoint(endpoint);
-	    config.setConnectionTimeoutInMillis(5000);
-	    config.setSocketTimeoutInMillis(2000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
-	public static BosClient getClient() {
-		return client;
+	private void lsViewAllFile() {
+		try {
+			/*
+			 * FIXME 这个有问题
+			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(bucket);
+			// "/" 为文件夹的分隔符
+			listObjectsRequest.setDelimiter("/");
+			// 列出fun目录下的所有文件和文件夹
+			listObjectsRequest.setPrefix(basePath);
+			 */
+
+			ListObjectsResponse listing = client.listObjects(bucket, basePath);		
+			for (BosObjectSummary bos : listing.getContents()) {
+				System.out.println(bos.getKey() + ":" + bos.getSize());
+			}
+			for (String prefix : listing.getCommonPrefixes()) {
+				System.out.println(prefix);
+			}
+			
+//			DeleteObjectRequest deleteObjectRequest = new DeleteObjectRequest(bucket, basePath);
+//			client.deleteObject(deleteObjectRequest);
+		} catch (BceServiceException e) {
+			if (!"NoSuchKey".equals(e.getErrorCode())) {
+				throw e;
+			} else {
+				System.out.println("no such key");
+			}
+		}
 	}
+
 }

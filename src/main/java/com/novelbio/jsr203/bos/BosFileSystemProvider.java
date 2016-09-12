@@ -40,14 +40,12 @@ public class BosFileSystemProvider extends FileSystemProvider {
 	
 	@Override
 	public String getScheme() {
-		// TODO Auto-generated method stub
-		return null;
+		return SCHEME;
 	}
 
 	@Override
 	public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		return new BosFileSystem();
 	}
 
 	@Override
