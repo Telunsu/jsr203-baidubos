@@ -18,7 +18,7 @@ public class TestBosFileSystem {
 	
 	@Test
 	public void testCreateDirectory() {
-		BosFileSystem bosFileSystem = new BosFileSystem();
+		BosFileSystem bosFileSystem = new BosFileSystem(new BosFileSystemProvider());
 		bosFileSystem.createDirectory("bos:/test/dir", null);
 		BosObject obj = client.getObject("novelbio", "test/dir/.exist");
 		Assert.assertEquals("test/dir/.exist", obj.getKey());
@@ -29,7 +29,7 @@ public class TestBosFileSystem {
 		BceServiceException exception = null;
 		client.putObject("novelbio", "test/dir/.exist", new byte[]{1});
 
-		BosFileSystem bosFileSystem = new BosFileSystem();
+		BosFileSystem bosFileSystem = new BosFileSystem(new BosFileSystemProvider());
 		bosFileSystem.deleteFile("bos:/test/dir/.exist");
 		try {
 			BosObject obj = client.getObject("novelbio", "test/dir/.exist");

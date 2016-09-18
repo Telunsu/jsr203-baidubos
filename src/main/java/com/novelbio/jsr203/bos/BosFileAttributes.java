@@ -21,72 +21,71 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 
+import com.baidubce.services.bos.model.BosObjectSummary;
+import com.baidubce.services.bos.model.ObjectMetadata;
+
 /**
- * Implementation of BasicFileAttributes.
+ * 从百度bos能获取到的一些文件基本属性
  */
 public class BosFileAttributes implements BasicFileAttributes {
-    /** Internal implementation of file status */
-    private final FileStatus fileStatus;
-    private final Object fileKey;
+	/** Internal implementation of file status */
+	private final BosObjectSummary bosObjSummary;
+	private final ObjectMetadata objMetadata;
 
-    public BosFileAttributes(final Object fileKey, final FileStatus fileStatus) {
-        this.fileKey = fileKey;
-        this.fileStatus = fileStatus;
-    }
+	public BosFileAttributes(final BosObjectSummary bosObjSummary, final ObjectMetadata objMetadata) {
+		this.bosObjSummary = bosObjSummary;
+		this.objMetadata = objMetadata;
+	}
 
-    @Override
-    public FileTime creationTime() {
-        return FileTime.from(this.fileStatus.getModification_time(), TimeUnit.MILLISECONDS);
-    }
+	@Override
+	public FileTime creationTime() {
+		return FileTime.from(this.objMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+	}
 
-    @Override
-    public Object fileKey() {
-        return this.fileKey;
-    }
+	@Override
+	public Object fileKey() {
+		return this.bosObjSummary.getKey();
+	}
 
-    @Override
-    public boolean isDirectory() {
-        return this.fileStatus.isDir();
-    }
+	@Override
+	public boolean isDirectory() {
+		return this.bosObjSummary.getKey().endsWith("/");
+	}
 
-    @Override
-    public boolean isOther() {
-        return false;
-    }
+	@Override
+	public boolean isOther() {
+		return false;
+	}
 
-    @Override
-    public boolean isRegularFile() {
-        return !this.fileStatus.isDir();
-    }
+	@Override
+	public boolean isRegularFile() {
+		return !this.bosObjSummary.getKey().endsWith("/");
+	}
 
-    @Override
-    public boolean isSymbolicLink() {
-//        return this.fileStatus.isSymlink();
-    	return false;
-    }
+	@Override
+	public boolean isSymbolicLink() {
+		return false;
+	}
 
-    @Override
-    public FileTime lastAccessTime() {
-        return FileTime.from(this.fileStatus.getAccess_time(), TimeUnit.MILLISECONDS);
-    }
+	@Override
+	public FileTime lastAccessTime() {
+		// bos只有一个最后修改时间
+		return FileTime.from(this.objMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+	}
 
-    @Override
-    public FileTime lastModifiedTime() {
-        return FileTime.from(this.fileStatus.getModification_time(), TimeUnit.MILLISECONDS);
-    }
+	@Override
+	public FileTime lastModifiedTime() {
+		return FileTime.from(this.objMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+	}
 
-    @Override
-    public long size() {
-        return this.fileStatus.getLength();
-    }
+	@Override
+	public long size() {
+		return this.bosObjSummary.getSize();
+	}
 
-    @Override
-    public String toString() {
-        return "HadoopFileAttributes [fileStatus=" + fileStatus + ", fileKey=" + fileKey + "]";
-    }
-
-    protected FileStatus getFileStatus() {
-        return fileStatus;
-    }
+	@Override
+	public String toString() {
+		return "HadoopFileAttributes [objMetadata=" + objMetadata + ", bosObjSummary=" + bosObjSummary + "]";
+	}
 
 }

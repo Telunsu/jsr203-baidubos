@@ -46,18 +46,15 @@ public class BosPath implements Path {
 	private final BosFileSystem bfs;
 	private int hashcode = 0; // cached hash code (created lazily)
 
-	BosPath(BosFileSystem bfs, byte[] path) {
+	BosPath(FileSystem bfs, byte[] path) {
 		this(bfs, path, false);
 	}
 
-	BosPath(BosFileSystem bfs, byte[] path, boolean normalized) {
+	BosPath(FileSystem bfs, byte[] path, boolean normalized) {
 		assert bfs != null;
 
-		this.bfs = bfs;
-		if (normalized)
-			this.path = path;
-		else
-			this.path = normalize(path);
+		this.bfs = (BosFileSystem) bfs;
+		this.path = normalized ? path : normalize(path);
 		// TODO : add charset management
 		this.internalPath = new String(path);
 	}
@@ -496,8 +493,13 @@ public class BosPath implements Path {
 	}
 
 	void move(BosPath target, CopyOption... options) throws IOException {
-		this.bfs.moveFile(toAbsolutePathStr(), target.toAbsolutePathStr(), options);
+//		this.bfs.moveFile(toAbsolutePathStr(), target.toAbsolutePathStr(), options);
 	}
+	
+//	SeekableByteChannel newByteChannel(Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+////		return this.bfs.newByteChannel(getRawResolvedPath(), options, attrs);
+//		ObjectSeekableByteStream objectSeekableByteStream = new ObjectSeekableByteStream(bucketName, fileName);
+//	}
 
 	// the result path does not contain ./ and .. components
 	private volatile byte[] resolved = null;
@@ -577,8 +579,8 @@ public class BosPath implements Path {
 		if ("/".equals(internalPath))
 			return true;
 		try {
-			return bfs.exists(getRawResolvedPath());
-		} catch (IOException x) {
+//			return bfs.exists(getRawResolvedPath());
+		} catch (Exception x) {
 		}
 		return false;
 	}
@@ -625,7 +627,12 @@ public class BosPath implements Path {
 	}
 
 	void copy(BosPath target, CopyOption... options) throws IOException {
-		this.bfs.copyFile(false, getResolvedPath(), target.getResolvedPath(), options);
+//		this.bfs.copyFile(false, getResolvedPath(), target.getResolvedPath(), options);
+	}
+
+	public FileStore getFileStore() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

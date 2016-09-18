@@ -11,22 +11,23 @@ import com.baidubce.services.bos.model.GetObjectRequest;
 
 /**
  * 用于百度bos的随机读功能
+ * 
  * @author zong0jie
  * @data 20160827
  */
 public class ObjectSeekableByteStream implements SeekableByteChannel {
 	BosClient client = BosInitiator.getClient();
-	
+
 	long position = 0;
-	//TODO 这个感觉可以从文件名中直接获取
+	// TODO 这个感觉可以从文件名中直接获取
 	String bucketName;
 	String fileName;
-	
+
 	public ObjectSeekableByteStream(String bucketName, String fileName) {
 		this.bucketName = bucketName;
 		this.fileName = fileName;
 	}
-	
+
 	@Override
 	public boolean isOpen() {
 		return true;
@@ -41,12 +42,13 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		int dstPos = dst.position();
 		GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
 		getObjectRequest.setRange(position, position + dst.capacity());
-	    BosObject object = client.getObject(getObjectRequest);
-	    InputStream is = object.getObjectContent();
-	    int num = is.read(dst.array(), dst.position(), dst.limit());
-	    dst.position(dst.limit());
-	    position = position + dst.limit() - dstPos;
-	    object.close();
+		BosObject object = client.getObject(getObjectRequest);
+		InputStream is = object.getObjectContent();
+		int num = is.read(dst.array(), dst.position(), dst.limit());
+		dst.position(dst.limit());
+		position = position + dst.limit() - dstPos;
+		object.close();
+		is.close();
 		return num;
 	}
 
@@ -71,14 +73,13 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	@Override
 	public long size() throws IOException {
 		GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
-	    BosObject object = client.getObject(getObjectRequest);
-	    return object.getObjectMetadata().getInstanceLength();
+		BosObject object = client.getObject(getObjectRequest);
+		return object.getObjectMetadata().getInstanceLength();
 	}
 
 	@Override
 	public SeekableByteChannel truncate(long size) throws IOException {
 		throw new RuntimeException("method doesn't support");
 	}
-	
-	
+
 }

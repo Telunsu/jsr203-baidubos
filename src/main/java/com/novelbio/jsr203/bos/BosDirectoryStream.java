@@ -27,7 +27,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class BosDirectoryStream implements DirectoryStream<Path> {
-    private final BosFileSystem bfs;
+    private final BosFileSystem bosFileSystem;
     //private final byte[] path;
 	private final BosPath path;
     private final DirectoryStream.Filter<? super Path> filter;
@@ -38,7 +38,7 @@ public class BosDirectoryStream implements DirectoryStream<Path> {
                        DirectoryStream.Filter<? super java.nio.file.Path> filter)
         throws IOException
     {
-        this.bfs = BosPath.getFileSystem();
+        this.bosFileSystem = BosPath.getFileSystem();
         //this.path = BosPath.getResolvedPath();
     	this.path = BosPath;
         this.filter = filter;
@@ -57,7 +57,7 @@ public class BosDirectoryStream implements DirectoryStream<Path> {
             throw new IllegalStateException("Iterator has already been returned");
 
         try {
-        	itr = bfs.iteratorOf(path, filter);
+        	itr = bosFileSystem.iteratorOf(path, filter);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         } catch (URISyntaxException e) {

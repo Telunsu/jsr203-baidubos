@@ -1,7 +1,6 @@
 package com.novelbio.jsr203.bos;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessMode;
@@ -10,25 +9,30 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.ProviderMismatchException;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
+
 
 public class BosFileSystemProvider extends FileSystemProvider {
 
+	private static final Logger logger = LoggerFactory.getLogger(BosFileSystemProvider.class);
+	
 	public static final String SCHEME = "bos";
 	
 	  // Checks that the given file is a HadoopPath
-	static final BosPath toHadoopPath(Path path) {
+	static final BosPath toBosPath(Path path) {
 		if (path == null) {
 			throw new NullPointerException();
 		}
@@ -45,19 +49,22 @@ public class BosFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
-		return new BosFileSystem();
+		return new BosFileSystem(this);
 	}
 
 	@Override
 	public FileSystem getFileSystem(URI uri) {
-		// TODO Auto-generated method stub
-		return null;
+		try {
+			return newFileSystem(uri, Collections.<String, Object> emptyMap());
+		} catch (IOException e) {
+			logger.error("Problem instantiating HadoopFileSystem: ", e);
+			throw new FileSystemNotFoundException(e.getMessage());
+		}
 	}
 
 	@Override
 	public Path getPath(URI uri) {
-		// TODO Auto-generated method stub
-		return null;
+		return getFileSystem(uri).getPath(uri.getPath());
 	}
 
     /**
@@ -88,59 +95,52 @@ public class BosFileSystemProvider extends FileSystemProvider {
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the file.
      */
-    public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
-        if (options.length > 0) {
-            for (OpenOption opt: options) {
-                // All OpenOption values except for APPEND and WRITE are allowed
-                if (opt == StandardOpenOption.APPEND ||
-                    opt == StandardOpenOption.WRITE)
-                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-            }
-        }
-        //TODO
-        return null;
-    }
+//    public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
+//        if (options.length > 0) {
+//            for (OpenOption opt: options) {
+//                // All OpenOption values except for APPEND and WRITE are allowed
+//                if (opt == StandardOpenOption.APPEND ||
+//                    opt == StandardOpenOption.WRITE)
+//                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
+//            }
+//        }
+//        //TODO
+//        return null;
+//    }
     
 	@Override
 	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		return new ObjectSeekableByteStream(PathDetail.getBucket(), path.toFile().getAbsolutePath());
 	}
 
 	@Override
 	public DirectoryStream<Path> newDirectoryStream(Path dir, Filter<? super Path> filter) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		return toBosPath(dir).newDirectoryStream(filter);
 	}
 
 	@Override
 	public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-		// TODO Auto-generated method stub
-		
+		toBosPath(dir).createDirectory(attrs);
 	}
 
 	@Override
 	public void delete(Path path) throws IOException {
-		// TODO Auto-generated method stub
-		
+		toBosPath(path).delete();
 	}
 
 	@Override
 	public void copy(Path source, Path target, CopyOption... options) throws IOException {
-		// TODO Auto-generated method stub
-		
+		toBosPath(source).copy(toBosPath(target), options);
 	}
 
 	@Override
 	public void move(Path source, Path target, CopyOption... options) throws IOException {
-		// TODO Auto-generated method stub
-		
+		toBosPath(source).move(toBosPath(target), options);
 	}
 
 	@Override
 	public boolean isSameFile(Path path, Path path2) throws IOException {
-		// TODO Auto-generated method stub
-		return false;
+		return toBosPath(path).compareTo(toBosPath(path2)) == 0;
 	}
 
 	@Override
@@ -151,37 +151,41 @@ public class BosFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public FileStore getFileStore(Path path) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		return toBosPath(path).getFileStore();
 	}
 
 	@Override
 	public void checkAccess(Path path, AccessMode... modes) throws IOException {
-		// TODO Auto-generated method stub
-		
+		toBosPath(path).getFileSystem().checkAccess(toBosPath(path), modes);
 	}
 
 	@Override
 	public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-		// TODO Auto-generated method stub
-		return null;
+		return toBosPath(path).getFileSystem().getView(toBosPath(path), type);
 	}
 
 	@Override
 	public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
+//		if (type == BasicFileAttributes.class || type == BosFileAttributes.class)
+//			return (A) toBosPath(path).getAttributes();
+//		
+//		if (type == PosixFileAttributes.class)
+//			return (A) toBosPath(path).getPosixAttributes();
+		
 		throw new UnsupportedOperationException("readAttributes:" + type.getName());
 	}
 
 	@Override
 	public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
-		// TODO Auto-generated method stub
+		// TODO 
+//		toBosPath(path).getFileSystem().readAttributes(toBosPath(path), attributes, options);
 		return null;
 	}
 
 	@Override
 	public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
 		// TODO Auto-generated method stub
-		
+//		toBosPath(path).getFileSystem().setAttribute(toBosPath(path), attribute, value, options);
 	}
 
 }
