@@ -2,34 +2,29 @@ package com.novelbio.jsr203.bos;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.channels.FileChannel;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.ProviderMismatchException;
 import java.nio.file.WatchEvent;
-import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchEvent.Modifier;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.nio.file.attribute.FileAttribute;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 百度bos的文件操作实现类.
@@ -56,7 +51,7 @@ public class BosPath implements Path {
 		this.bfs = (BosFileSystem) bfs;
 		this.path = normalized ? path : normalize(path);
 		// TODO : add charset management
-		this.internalPath = new String(path);
+		this.internalPath = new String(this.path);
 	}
 
 	private BosPath checkPath(Path path) {
@@ -586,7 +581,7 @@ public class BosPath implements Path {
 	}
 
 	public Path getRawResolvedPath() {
-//		return new BosPath(bfs, "hdfs://" + new String(getResolvedPath()));
+//		return new BosPath(bfs, "bos://" + new String(getResolvedPath()));
 		return null;
 	}
 	
@@ -633,6 +628,10 @@ public class BosPath implements Path {
 	public FileStore getFileStore() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public InputStream newInputStream(Path path, OpenOption... options) {
+		return this.bfs.newInputStream(path, options);
 	}
 
 }

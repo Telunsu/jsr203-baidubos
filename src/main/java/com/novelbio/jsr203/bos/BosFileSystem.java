@@ -2,10 +2,12 @@ package com.novelbio.jsr203.bos;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.AccessMode;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.WatchService;
@@ -24,6 +26,8 @@ import java.util.regex.Pattern;
 
 import com.baidubce.BceServiceException;
 import com.baidubce.services.bos.BosClient;
+import com.baidubce.services.bos.model.BosObject;
+import com.baidubce.services.bos.model.GetObjectRequest;
 import com.baidubce.services.bos.model.ListObjectsRequest;
 import com.baidubce.services.bos.model.ListObjectsResponse;
 
@@ -39,12 +43,12 @@ public class BosFileSystem extends FileSystem {
 	private boolean readOnly;
 	private volatile boolean isOpen = true;
 	FileSystemProvider fileSystemProvider;
-	FileSystem fileSystem;
+//	FileSystem fileSystem;
 	BosClient client = BosInitiator.getClient();
 
 	public BosFileSystem(FileSystemProvider fileSystemProvider) {
 		this.fileSystemProvider = fileSystemProvider;
-		this.fileSystem = new BosFileSystem(fileSystemProvider);
+//		this.fileSystem = new BosFileSystem(fileSystemProvider);
 	}
 	
 	@Override
@@ -86,11 +90,11 @@ public class BosFileSystem extends FileSystem {
 		List<Path> lsPaths = new ArrayList<>();
 		if (lsObject.getContents() != null) {
 			// 文件
-			lsObject.getContents().forEach(bos -> lsPaths.add(new BosPath(fileSystem, bos.getKey().getBytes())));
+			lsObject.getContents().forEach(bos -> lsPaths.add(new BosPath(this, bos.getKey().getBytes())));
 		}
 		if (lsObject.getCommonPrefixes() != null) {
 			// 文件夹
-			lsObject.getCommonPrefixes().forEach(prefix -> lsPaths.add(new BosPath(fileSystem, prefix.getBytes())));
+			lsObject.getCommonPrefixes().forEach(prefix -> lsPaths.add(new BosPath(this, prefix.getBytes())));
 		}
 		return lsPaths;
 	}
@@ -124,6 +128,10 @@ public class BosFileSystem extends FileSystem {
 				}
 			}
 			path = sb.toString();
+		}
+		
+		while (path.startsWith("/")) {
+			path = path.substring(1);
 		}
 		return new BosPath(this, path.getBytes());
 	}
@@ -329,6 +337,12 @@ public class BosFileSystem extends FileSystem {
 	public <V extends FileAttributeView> V getView(BosPath bosPath, Class<V> type) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public InputStream newInputStream(Path path, OpenOption[] options) {
+		GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetail.getBucket(), path.toString());
+		BosObject bosObject = client.getObject(getObjectRequest);
+		return bosObject.getObjectContent();
 	}
 
 }

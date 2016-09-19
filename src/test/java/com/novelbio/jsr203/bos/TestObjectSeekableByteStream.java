@@ -41,9 +41,9 @@ public class TestObjectSeekableByteStream {
 
 		try {
 			BosClient client = BosInitiator.getClient();
-			GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetail.getBucket(), "fansTest/test1/1");
+			GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetail.getBucket(), "q/DownFile2016-08-29.xls");
 			// 获取文件部分内容.如果指定值超出文件大小会抛异常.
-			getObjectRequest.setRange(0, 1024);
+			getObjectRequest.setRange(0, 12);
 			BosObject object = client.getObject(getObjectRequest);
 			BosObjectInputStream is = object.getObjectContent();
 			BufferedReader bfR = new BufferedReader(new InputStreamReader(is));

@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 
+import com.baidubce.BceServiceException;
 import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.model.BosObject;
 import com.baidubce.services.bos.model.GetObjectRequest;
@@ -39,16 +40,22 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public int read(ByteBuffer dst) throws IOException {
-		int dstPos = dst.position();
-		GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
-		getObjectRequest.setRange(position, position + dst.capacity());
-		BosObject object = client.getObject(getObjectRequest);
-		InputStream is = object.getObjectContent();
-		int num = is.read(dst.array(), dst.position(), dst.limit());
-		dst.position(dst.limit());
-		position = position + dst.limit() - dstPos;
-		object.close();
-		is.close();
+		int num;
+		try {
+			int dstPos = dst.position();
+			GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
+			getObjectRequest.setRange(position, position + dst.capacity());
+			BosObject object = client.getObject(getObjectRequest);
+			InputStream is = object.getObjectContent();
+			num = is.read(dst.array(), dst.position(), dst.limit());
+			dst.position(dst.limit());
+			position = position + dst.limit() - dstPos;
+			object.close();
+			is.close();
+			
+		} catch (BceServiceException e) {
+			num = -1;
+		}
 		return num;
 	}
 

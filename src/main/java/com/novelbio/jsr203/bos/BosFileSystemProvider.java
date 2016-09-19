@@ -1,6 +1,7 @@
 package com.novelbio.jsr203.bos;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessMode;
@@ -22,7 +23,9 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class BosFileSystemProvider extends FileSystemProvider {
@@ -110,7 +113,16 @@ public class BosFileSystemProvider extends FileSystemProvider {
     
 	@Override
 	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		return new ObjectSeekableByteStream(PathDetail.getBucket(), path.toFile().getAbsolutePath());
+		return new ObjectSeekableByteStream(PathDetail.getBucket(), path.toString());
+	}
+	
+	/**
+	 * 重写newInputStream方法.如果不重写,默认实现会调用newByteChannel方法.实际测试该方法每次read都去联一次远程地址,超级慢.
+	 * @see java.nio.file.spi.FileSystemProvider#newInputStream(java.nio.file.Path, java.nio.file.OpenOption[])
+	 */
+	@Override
+	public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
+		return toBosPath(path).newInputStream(path, options);
 	}
 
 	@Override
