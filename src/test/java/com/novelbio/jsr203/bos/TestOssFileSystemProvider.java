@@ -180,6 +180,21 @@ public class TestOssFileSystemProvider {
 			e.printStackTrace();
 		}
 		
+		try {
+			OssFileSystemProvider provider = new OssFileSystemProvider();
+			String file1 = "/home/novelbio/data/small.txt";
+			String file2 = "dataFile_copy2.txt";
+			Path path1 = new File(file1).toPath();
+			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			Path path2 = provider.getPath(uri2);
+			
+			Files.copy(path2, path1, StandardCopyOption.REPLACE_EXISTING);
+			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), path2.toString()));
+//			Files.delete(path2);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 	@Test
@@ -211,6 +226,23 @@ public class TestOssFileSystemProvider {
 			Path path2 = provider.getPath(uri2);
 			
 			Files.move(path1, path2, StandardCopyOption.COPY_ATTRIBUTES);
+			
+			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), file2));
+			
+			Files.move(path2, path1, StandardCopyOption.COPY_ATTRIBUTES);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			OssFileSystemProvider provider = new OssFileSystemProvider();
+			String file1 = "/home/novelbio/data/small2.txt";
+			String file2 = "dataFile.txt";
+			Path path1 = new File(file1).toPath();
+			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			Path path2 = provider.getPath(uri2);
+			
+			Files.move(path2, path1, StandardCopyOption.COPY_ATTRIBUTES);
 			
 			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), file2));
 			
@@ -340,6 +372,8 @@ public class TestOssFileSystemProvider {
 //			close(is);
 //			close(os);
 //		}
+		
+		
 	}
 	
 	@Test
@@ -365,7 +399,8 @@ public class TestOssFileSystemProvider {
 		OutputStream os = null;
 		try {
 			String ossFileName = "dataFile.txt"	;
-			File file = new File("/home/novelbio/data/small.txt");
+			client.deleteObject(PathDetail.getBucket(), ossFileName);
+			File file = new File("/home/novelbio/data/arabidopsis_rna_2.fq");
 			is = Files.newInputStream(file.toPath());
 			Path path = new OssFileSystemProvider().getPath(new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + ossFileName));
 			os = Files.newOutputStream(path, StandardOpenOption.CREATE);
@@ -398,7 +433,7 @@ public class TestOssFileSystemProvider {
 	
 	@Test
 	public void testNewOutputStream() {
-		//fail("Not yet implemented");
+		
 	}
 
 	@Test

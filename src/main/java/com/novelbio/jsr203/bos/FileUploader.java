@@ -60,7 +60,7 @@ public class FileUploader {
 				long curPartSize = (i + 1 == partCount) ? (fileLength - startPos) : partSize;
 				
 				// 线程执行。将分好的文件块加入到list集合中
-				completionService.submit(new AliyunOSSUpload(file, startPos, curPartSize, i + 1, uploadId, key));
+				completionService.submit(new AliyunOSSUpload(file, startPos, curPartSize, i + 1, uploadId, key, false));
 			}
 
 //			/**

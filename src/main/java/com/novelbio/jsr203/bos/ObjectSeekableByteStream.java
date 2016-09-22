@@ -34,7 +34,8 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	private static final Logger logger = LoggerFactory.getLogger(ObjectSeekableByteStream.class);
 	
 	/** 分块大小,默认1G */
-	long PART_SIZE = 1 << 30;
+//	long PART_SIZE = 1 << 30;
+	long PART_SIZE = 1 << 20;
 	
 	OSSClient client = OssInitiator.getClient();
 	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于50，则多余线程会放入队列中依次执行
@@ -46,8 +47,6 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	OutputStream outputStream;
 	/** 本地临时缓存文件 */
 	File tempFile = null;
-	/** 每一块临时文件记录下来,上传完成后删除. */
-	List<String> lsTempFile = new ArrayList<>();
 	/** 写入的流的长度 */
 	long length;
 	/** 块编号 */
@@ -127,9 +126,8 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		outputStream.close();
 		partNum++;
 		// 线程执行。将分好的文件块加入到list集合中
-		completionService.submit(new AliyunOSSUpload(tempFile, 0, length, partNum, uploadId, fileName));
+		completionService.submit(new AliyunOSSUpload(tempFile, 0, length, partNum, uploadId, fileName, true));
 		length = 0;
-		lsTempFile.add(tempFile.getAbsolutePath());
 		if (!isEnd) {
 			tempFile = File.createTempFile(fileName, ".tmp");
 			outputStream = new FileOutputStream(tempFile);
@@ -170,9 +168,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		 */
 		AliyunOSSUpload.listAllParts(uploadId, fileName);
 		
-		lsTempFile.forEach(filePath -> {
-			new File(filePath).delete();
-		});
+//		lsTempFile.forEach(filePath -> {
+//			new File(filePath).delete();
+//		});
 
 		/*
 		 * 完成分块上传

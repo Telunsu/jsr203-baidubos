@@ -35,6 +35,7 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 	private String uploadId;
 	private static String key;
 	private static String bucketName = PathDetail.getBucket();
+	private boolean isTempFile;
 	
 	
 	protected static OSSClient client = OssInitiator.getClient();
@@ -53,13 +54,14 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 	 * @param key
 	 *            上传到OSS后的文件名
 	 */
-	public AliyunOSSUpload(File localFile, long startPos, long partSize, int partNumber, String uploadId, String key) {
+	public AliyunOSSUpload(File localFile, long startPos, long partSize, int partNumber, String uploadId, String key, boolean isTempFile) {
 		this.localFile = localFile;
 		this.startPos = startPos;
 		this.partSize = partSize;
 		this.partNumber = partNumber;
 		this.uploadId = uploadId;
-		AliyunOSSUpload.key = key;
+		this.key = key;
+		this.isTempFile = isTempFile;
 //		AliyunOSSUpload.bucketName = bucketName;
 	}
 
@@ -86,6 +88,9 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 
 			UploadPartResult uploadPartResult = client.uploadPart(uploadPartRequest);
 			logger.info("Part#" + this.partNumber + " done\n");
+			if (isTempFile && localFile.length() == partSize) {
+				localFile.delete();
+			}
 			
 			return uploadPartResult.getPartETag();
 		} catch (Exception e) {
