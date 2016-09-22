@@ -1,6 +1,7 @@
 package com.novelbio.jsr203.bos;
 
 import java.io.File;
+import java.net.URI;
 
 import org.junit.Assert;
 import org.junit.Rule;
@@ -36,7 +37,8 @@ public class TestOssFileSystem {
 		client.putObject("novelbio", "test/dir/exist2", new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/big.bam"));
 		OSSException exception = null;
 		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider());
-		ossFileSystem.deleteFile("bos:/test/dir/.exist");
+		String file = "small.txt";
+		ossFileSystem.deleteFile(new File("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file).toPath());
 		try {
 			OSSObject obj = client.getObject("novelbio", "test/dir/.exist");
 		} catch (Exception e) {

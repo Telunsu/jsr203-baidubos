@@ -1,19 +1,25 @@
 package com.novelbio.jsr203.bos;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.AccessMode;
+import java.nio.file.DirectoryStream;
+import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
+import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.UserPrincipalLookupService;
@@ -30,15 +36,17 @@ import java.util.regex.Pattern;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.CopyObjectRequest;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.InitiateMultipartUploadRequest;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObject;
+import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.UploadPartRequest;
 
 /**
- * 百度bos文件系统
+ * 阿里云oss文件系统
  * 
  * @author novelbio
  *
@@ -188,20 +196,41 @@ public class OssFileSystem extends FileSystem {
 		return null;
 	}
 
-	public Iterator<Path> iteratorOf(OssPath path, java.nio.file.DirectoryStream.Filter<? super Path> filter) throws IOException, URISyntaxException {
+	/**
+	 * 获取路径下的文件夹和文件
+	 * 
+	 * @param ossPath
+	 * @param filter
+	 * @return
+	 * @throws Exception
+	 */
+	public Iterator<Path> iteratorOf(OssPath ossPath, java.nio.file.DirectoryStream.Filter<? super Path> filter) throws Exception {
+		List<Path> lsOssPath = new ArrayList<>();
+		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(PathDetail.getBucket());
+		// "/" 为文件夹的分隔符
+		listObjectsRequest.setDelimiter("/");
+		// 列出ossPath目录下的内容
+		listObjectsRequest.setPrefix(ossPath.toString());
+		ObjectListing objectListing = OssInitiator.getClient().listObjects(listObjectsRequest);
 
-		// FileStatus inode = this.fs.getFileStatus(path.getRawResolvedPath());
-		// if (inode.isDirectory() == false)
-		// throw new NotDirectoryException(getString(path.getResolvedPath()));
-		List<Path> list = new ArrayList<Path>();
-		// for (FileStatus stat : this.fs.listStatus(path.getRawResolvedPath()))
-		// {
-		// HadoopPath hp = new HadoopPath(this,
-		// stat.getPath().toUri().getPath().getBytes());
-		// if (filter == null || filter.accept(hp))
-		// list.add(hp);
-		// }
-		return list.iterator();
+		if (objectListing.getCommonPrefixes() != null) {
+			for (String name : objectListing.getCommonPrefixes()) {
+				URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + name);
+				lsOssPath.add(fileSystemProvider.getPath(uri));
+			}
+		}
+
+		if (objectListing.getObjectSummaries() != null) {
+			for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
+				if (summary.getKey().equals(ossPath.toString())) {
+					// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
+					continue;
+				}
+				URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + summary.getKey());
+				lsOssPath.add(fileSystemProvider.getPath(uri));
+			}
+		}
+		return lsOssPath.iterator();
 	}
 
 	public OSSClient getBos() {
@@ -241,19 +270,28 @@ public class OssFileSystem extends FileSystem {
 //	}
 
 	/** 只能删除文件，不能删除文件夹 */
-	protected void deleteFile(String absolutePathStr) {
-		String[] bucket2Key = getBucket2Key(absolutePathStr);
+	protected void deleteFile(Path path) {
+//		String[] bucket2Key = getBucket2Key(absolutePathStr);
 		try {
-			client.deleteObject(bucket2Key[0], bucket2Key[1]);
+			// TODO 删除文件,需判断是不是一个文件,不能把文件夹删除了.
+			if (client.doesObjectExist(PathDetail.getBucket(), path.toString())) {
+				client.deleteObject(PathDetail.getBucket(), path.toString());
+			}
 		} catch (OSSException|ClientException e) {
 			throw e;
 		}
 	}
 
 	protected void createDirectory(String path, FileAttribute<?>[] attrs) {
-		String[] bucket2Key = getBucket2Key(path);
-		String key = addSep(removeSplashHead(bucket2Key[1], false)) + DIR_SUFFIX;
-//		client.putObject(bucket2Key[0], key, new byte[] { 1 });
+		if(!path.endsWith("/")) {
+			path = path + "/";
+		}
+		
+		if (client.doesObjectExist(PathDetail.getBucket(), path)) {
+			throw new RuntimeException("path is existed.path=" + path);
+		}
+		
+		client.putObject(PathDetail.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
 	}
 
 	/**
@@ -319,15 +357,8 @@ public class OssFileSystem extends FileSystem {
 		}
 		return path;
 	}
-//
-//	public void moveFile(String absolutePathStr, String absolutePathStr2, CopyOption[] options) {
-//		client.
-//	}
-//
-//	public void copyFile(boolean b, byte[] resolvedPath, byte[] resolvedPath2, CopyOption[] options) {
-//		client.copyObject(sourceBucketName, sourceKey, destinationBucketName, destinationKey)
-//	}
-//
+
+
 //	public boolean exists(Path rawResolvedPath) throws IOException{
 //		// TODO Auto-generated method stub
 //		return false;
@@ -349,23 +380,50 @@ public class OssFileSystem extends FileSystem {
 		return bosObject.getObjectContent();
 	}
 
-	public OutputStream newOutputStream(Path path) {
-//		UploadPartRequest uploadPartRequest = new UploadPartRequest(PathDetail.getBucket(), path.getFileName().toString());
-//		uploadPartRequest.setBucketName(PathDetail.getBucket());
-//		uploadPartRequest.setKey(path.getFileName().toString());
-//		InitiateMultipartUploadRequest initiateMultipartUploadRequest = new InitiateMultipartUploadRequest(PathDetail.getBucket(), path.getFileName().toString());
-//		String uploadId = client.initiateMultipartUpload(initiateMultipartUploadRequest).getRequestId();
-//		uploadPartRequest.setUploadId(uploadId);
-//		PipedOutputStream os = new PipedOutputStream();
-//		PipedInputStream is = new PipedInputStream(os);
-//		uploadPartRequest.setInputStream(is);
-////		uploadPartRequest.setPartSize(size);
-////		uploadPartRequest.setPartNumber(i + 1);
-//		
-//		client.uploadPart(uploadPartRequest);
-//		
-//		return os;
-		return new PipedOutputStream();
+	public DirectoryStream<Path> newDirectoryStream(OssPath ossPath, Filter<? super Path> filter) throws IOException {
+		return new OssDirectoryStream(ossPath, filter);
 	}
+
+	public void copy(OssPath source, OssPath target) {
+		if (!client.doesObjectExist(PathDetail.getBucket(), source.toString())) {
+			throw new RuntimeException("source file not exist! source=" + source);
+		}
+		if (client.doesObjectExist(PathDetail.getBucket(), target.toString())) {
+			throw new RuntimeException("target file exist! target=" + target);
+		}
+		CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
+		client.copyObject(copyObjectRequest);
+	}
+
+	/**
+	 * oss本身不提供move操作.现在逻辑是先拷贝一个,然后删除原来的.
+	 * @param ossPath
+	 * @param target
+	 */
+	public void move(OssPath source, OssPath target) {
+		if (!client.doesObjectExist(PathDetail.getBucket(), source.toString())) {
+			throw new RuntimeException("source file not exist! source=" + source);
+		}
+		if (client.doesObjectExist(PathDetail.getBucket(), target.toString())) {
+			throw new RuntimeException("target file exist! target=" + target);
+		}
+		CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
+		client.copyObject(copyObjectRequest);
+		client.deleteObject(PathDetail.getBucket(), source.toString());
+	}
+
+	public <A extends BasicFileAttributes> A readAttributes(OssPath ossPath, Class<A> type, LinkOption[] options) {
+		OSSObject ossObject = client.getObject(PathDetail.getBucket(), ossPath.toString());
+		return (A) new OssFileAttributes(ossObject);
+	}
+
+	public void readAttributes(OssPath path, AccessMode... modes) throws IOException {
+		try {
+			client.getObject(PathDetail.getBucket(), path.toString());
+		} catch (OSSException e) {
+			throw new IOException(e);
+		}
+	}
+
 
 }

@@ -7,10 +7,10 @@ import java.nio.file.attribute.FileStoreAttributeView;
 
 public class OssFileStore extends FileStore {
 	
-	private OssFileSystem bosFileSystem;
+	private OssFileSystem ossFileSystem;
 
 	public OssFileStore(OssPath bosPath) {
-		this.bosFileSystem = bosPath.getFileSystem();
+		this.ossFileSystem = bosPath.getFileSystem();
 	}
 	
 	@Override
@@ -20,12 +20,12 @@ public class OssFileStore extends FileStore {
 
 	@Override
 	public String type() {
-		  return "bos";
+		  return "oss";
 	}
 
 	@Override
 	public boolean isReadOnly() {
-		return this.bosFileSystem.isReadOnly();
+		return this.ossFileSystem.isReadOnly();
 	}
 
 	@Override

@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.AccessMode;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
 import java.nio.file.DirectoryStream.Filter;
@@ -21,6 +22,7 @@ import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchEvent.Modifier;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.util.AbstractList;
 import java.util.Arrays;
@@ -28,7 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * 百度bos的文件操作实现类.
+ * 阿里云oss的文件操作实现类.
  * 
  * @author novelbio
  *
@@ -464,7 +466,7 @@ public class OssPath implements Path {
 	}
 
 	void createDirectory(FileAttribute<?>... attrs) throws IOException {
-		this.ossFileSystem.createDirectory(toAbsolutePathStr(), attrs);
+		this.ossFileSystem.createDirectory(new String(this.path), attrs);
 	}
 
 	@Override
@@ -477,26 +479,21 @@ public class OssPath implements Path {
 	}
 
 	DirectoryStream<Path> newDirectoryStream(Filter<? super Path> filter) throws IOException {
-		return new OssDirectoryStream(this, filter);
+		return this.ossFileSystem.newDirectoryStream(this, filter);
 	}
 
 	void delete() throws IOException {
-		this.ossFileSystem.deleteFile(toAbsolutePathStr());
+		this.ossFileSystem.deleteFile(this);
 	}
 
 	void deleteIfExists() throws IOException {
-		this.ossFileSystem.deleteFile(toAbsolutePathStr());
+		this.ossFileSystem.deleteFile(this);
 	}
 
 	void move(OssPath target, CopyOption... options) throws IOException {
-//		this.bfs.moveFile(toAbsolutePathStr(), target.toAbsolutePathStr(), options);
+		this.ossFileSystem.move(this, target);
 	}
 	
-//	SeekableByteChannel newByteChannel(Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-////		return this.bfs.newByteChannel(getRawResolvedPath(), options, attrs);
-//		ObjectSeekableByteStream objectSeekableByteStream = new ObjectSeekableByteStream(bucketName, fileName);
-//	}
-
 	// the result path does not contain ./ and .. components
 	private volatile byte[] resolved = null;
 
@@ -623,20 +620,20 @@ public class OssPath implements Path {
 	}
 
 	void copy(OssPath target, CopyOption... options) throws IOException {
-//		this.bfs.copyFile(false, getResolvedPath(), target.getResolvedPath(), options);
+		this.ossFileSystem.copy(this, target);
 	}
 
-	public FileStore getFileStore() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	public InputStream newInputStream(Path path, OpenOption... options) {
 		return this.ossFileSystem.newInputStream(path, options);
 	}
 
-	public OutputStream newOutputStream(Path path) {
-		return this.ossFileSystem.newOutputStream(path);
+	public <A extends BasicFileAttributes> A readAttributes(Class<A> type, LinkOption[] options) {
+		return this.ossFileSystem.readAttributes(this, type, options);
+	}
+
+	public void checkAccess(AccessMode... modes) throws IOException {
+		this.ossFileSystem.readAttributes(this, modes);
 	}
 
 }

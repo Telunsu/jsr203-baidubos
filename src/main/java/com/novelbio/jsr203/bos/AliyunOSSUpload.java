@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ import com.aliyun.oss.model.PartSummary;
 import com.aliyun.oss.model.UploadPartRequest;
 import com.aliyun.oss.model.UploadPartResult;
 
-public class AliyunOSSUpload implements Runnable {
+public class AliyunOSSUpload implements Callable<PartETag> {
 	private static Logger logger = LoggerFactory.getLogger(AliyunOSSUpload.class);
 
 	private File localFile;
@@ -33,10 +34,7 @@ public class AliyunOSSUpload implements Runnable {
 	private int partNumber;
 	private String uploadId;
 	private static String key;
-	private static String bucketName;
-	
-	// 新建一个List保存每个分块上传后的ETag和PartNumber
-	protected static List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
+	private static String bucketName = PathDetail.getBucket();
 	
 	
 	protected static OSSClient client = OssInitiator.getClient();
@@ -55,21 +53,21 @@ public class AliyunOSSUpload implements Runnable {
 	 * @param key
 	 *            上传到OSS后的文件名
 	 */
-	public AliyunOSSUpload(File localFile, long startPos, long partSize, int partNumber, String uploadId, String key , String bucketName) {
+	public AliyunOSSUpload(File localFile, long startPos, long partSize, int partNumber, String uploadId, String key) {
 		this.localFile = localFile;
 		this.startPos = startPos;
 		this.partSize = partSize;
 		this.partNumber = partNumber;
 		this.uploadId = uploadId;
 		AliyunOSSUpload.key = key;
-		AliyunOSSUpload.bucketName = bucketName;
+//		AliyunOSSUpload.bucketName = bucketName;
 	}
 
 	/**
 	 * 分块上传核心方法(将文件分成按照每个5M分成N个块，并加入到一个list集合中)
 	 */
 	@Override
-	public void run() {
+	public PartETag call() throws Exception {
 		InputStream instream = null;
 		try {
 			// 获取文件流
@@ -88,12 +86,11 @@ public class AliyunOSSUpload implements Runnable {
 
 			UploadPartResult uploadPartResult = client.uploadPart(uploadPartRequest);
 			logger.info("Part#" + this.partNumber + " done\n");
-			synchronized (partETags) {
-				// 将返回的PartETag保存到List中。
-				partETags.add(uploadPartResult.getPartETag());
-			}
+			
+			return uploadPartResult.getPartETag();
 		} catch (Exception e) {
 			e.printStackTrace();
+			throw e;
 		} finally {
 			if (instream != null) {
 				try {
@@ -105,7 +102,7 @@ public class AliyunOSSUpload implements Runnable {
 			}
 		}
 	}
-
+	
 	/**
 	 * 初始化分块上传事件并生成uploadID，用来作为区分分块上传事件的唯一标识
 	 * 
@@ -123,7 +120,7 @@ public class AliyunOSSUpload implements Runnable {
 	 * 
 	 * @param uploadId
 	 */
-	protected static void completeMultipartUpload(String uploadId) {
+	protected static void completeMultipartUpload(List<PartETag> partETags, String uploadId) {
 		// 将文件分块按照升序排序
 		Collections.sort(partETags, new Comparator<PartETag>() {
 			@Override
@@ -143,7 +140,7 @@ public class AliyunOSSUpload implements Runnable {
 	 * 
 	 * @param uploadId
 	 */
-	protected static void listAllParts(String uploadId) {
+	protected static void listAllParts(String uploadId, String key) {
 		ListPartsRequest listPartsRequest = new ListPartsRequest(bucketName, key, uploadId);
 		// 获取上传的所有分块信息
 		PartListing partListing = client.listParts(listPartsRequest);
@@ -156,4 +153,5 @@ public class AliyunOSSUpload implements Runnable {
 			logger.info("分块编号 " + partSummary.getPartNumber() + ", ETag=" + partSummary.getETag());
 		}
 	}
+
 }

@@ -21,6 +21,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectMetadata;
 
@@ -29,27 +30,25 @@ import com.aliyun.oss.model.ObjectMetadata;
  */
 public class OssFileAttributes implements BasicFileAttributes {
 	/** Internal implementation of file status */
-	private final OSSObjectSummary bosObjSummary;
-	private final ObjectMetadata objMetadata;
+	private final OSSObject ossObject;
 
-	public OssFileAttributes(final OSSObjectSummary bosObjSummary, final ObjectMetadata objMetadata) {
-		this.bosObjSummary = bosObjSummary;
-		this.objMetadata = objMetadata;
+	public OssFileAttributes(OSSObject ossObject) {
+		this.ossObject = ossObject;
 	}
 
 	@Override
 	public FileTime creationTime() {
-		return FileTime.from(this.objMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public Object fileKey() {
-		return this.bosObjSummary.getKey();
+		return this.ossObject.getKey();
 	}
 
 	@Override
 	public boolean isDirectory() {
-		return this.bosObjSummary.getKey().endsWith("/");
+		return this.ossObject.getKey().endsWith("/");
 	}
 
 	@Override
@@ -59,7 +58,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public boolean isRegularFile() {
-		return !this.bosObjSummary.getKey().endsWith("/");
+		return !this.ossObject.getKey().endsWith("/");
 	}
 
 	@Override
@@ -70,22 +69,22 @@ public class OssFileAttributes implements BasicFileAttributes {
 	@Override
 	public FileTime lastAccessTime() {
 		// bos只有一个最后修改时间
-		return FileTime.from(this.objMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public FileTime lastModifiedTime() {
-		return FileTime.from(this.objMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public long size() {
-		return this.bosObjSummary.getSize();
+		return this.ossObject.getObjectMetadata().getContentLength();
 	}
 
 	@Override
 	public String toString() {
-		return "HadoopFileAttributes [objMetadata=" + objMetadata + ", bosObjSummary=" + bosObjSummary + "]";
+		return "HadoopFileAttributes [ossObject=" + this.ossObject + "]";
 	}
 
 }

@@ -4,12 +4,8 @@ import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 
-import com.aliyun.oss.model.GenericRequest;
-import com.aliyun.oss.model.OSSObjectSummary;
-import com.aliyun.oss.model.ObjectListing;
-import com.aliyun.oss.model.ObjectMetadata;
+import com.aliyun.oss.model.OSSObject;
 
 
 public class OssFileAttrbuteView implements BasicFileAttributeView {
@@ -22,7 +18,7 @@ public class OssFileAttrbuteView implements BasicFileAttributeView {
 	
 	@Override
 	public String name() {
-		return "bos";
+		return "oss";
 	}
 
 	/* 
@@ -31,17 +27,19 @@ public class OssFileAttrbuteView implements BasicFileAttributeView {
 	 */
 	@Override
 	public BasicFileAttributes readAttributes() throws IOException {
-		String key = path.toFile().getAbsolutePath();
-		GenericRequest getObjMetadata = new GenericRequest(PathDetail.getBucket(), key);
-		ObjectListing lsObjResponse = path.getFileSystem().getBos().listObjects(PathDetail.getBucket(), key);
+//		String key = path.toFile().getAbsolutePath();
+//		GenericRequest getObjMetadata = new GenericRequest(PathDetail.getBucket(), key);
+//		ObjectListing lsObjResponse = path.getFileSystem().getBos().listObjects(PathDetail.getBucket(), key);
+//		
+//		Optional<OSSObjectSummary> bosObjSummary = null;
+//		if (lsObjResponse.getObjectSummaries() != null) {
+//			bosObjSummary = lsObjResponse.getObjectSummaries().stream().findFirst();
+//		}
+//		ObjectMetadata ObjectMetadata = path.getFileSystem().getBos().getObjectMetadata(getObjMetadata);
 		
-		Optional<OSSObjectSummary> bosObjSummary = null;
-		if (lsObjResponse.getObjectSummaries() != null) {
-			bosObjSummary = lsObjResponse.getObjectSummaries().stream().findFirst();
-		}
-		ObjectMetadata ObjectMetadata = path.getFileSystem().getBos().getObjectMetadata(getObjMetadata);
+		OSSObject ossObject = OssInitiator.getClient().getObject(PathDetail.getBucket(), path.toString());
 		
-		return new OssFileAttributes(bosObjSummary.get(), ObjectMetadata);
+		return new OssFileAttributes(ossObject);
 	}
 
 	/* 
@@ -50,7 +48,7 @@ public class OssFileAttrbuteView implements BasicFileAttributeView {
 	 */
 	@Override
 	public void setTimes(FileTime lastModifiedTime, FileTime lastAccessTime, FileTime createTime) throws IOException {
-		// bos的不能设置,bos会自动处理.
+		// oss的不能设置,oos会自动处理.
 	}
 
 }

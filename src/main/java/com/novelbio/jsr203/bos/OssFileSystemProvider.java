@@ -2,7 +2,6 @@ package com.novelbio.jsr203.bos;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AccessMode;
@@ -12,12 +11,10 @@ import java.nio.file.DirectoryStream.Filter;
 import java.nio.file.FileStore;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.ProviderMismatchException;
-import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
@@ -29,14 +26,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
-
 
 public class OssFileSystemProvider extends FileSystemProvider {
 
 	private static final Logger logger = LoggerFactory.getLogger(OssFileSystemProvider.class);
 	
-	public static final String SCHEME = "bos";
+	public static final String SCHEME = "http";
 	
 	  // Checks that the given file is a HadoopPath
 	static final OssPath toBosPath(Path path) {
@@ -55,11 +50,6 @@ public class OssFileSystemProvider extends FileSystemProvider {
 	}
 
 	@Override
-	public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
-		return new OssFileSystem(this);
-	}
-
-	@Override
 	public FileSystem getFileSystem(URI uri) {
 		try {
 			return newFileSystem(uri, Collections.<String, Object> emptyMap());
@@ -68,53 +58,17 @@ public class OssFileSystemProvider extends FileSystemProvider {
 			throw new FileSystemNotFoundException(e.getMessage());
 		}
 	}
+	
+	@Override
+	public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
+		return new OssFileSystem(this);
+	}
 
 	@Override
 	public Path getPath(URI uri) {
 		return getFileSystem(uri).getPath(uri.getPath());
 	}
 
-    /**
-     * Opens a file, returning an input stream to read from the file. This
-     * method works in exactly the manner specified by the {@link
-     * Files#newInputStream} method.
-     *
-     * <p> The default implementation of this method opens a channel to the file
-     * as if by invoking the {@link #newByteChannel} method and constructs a
-     * stream that reads bytes from the channel. This method should be overridden
-     * where appropriate.
-     *
-     * @param   path
-     *          the path to the file to open
-     * @param   options
-     *          options specifying how the file is opened
-     *
-     * @return  a new input stream
-     *
-     * @throws  IllegalArgumentException
-     *          if an invalid combination of options is specified
-     * @throws  UnsupportedOperationException
-     *          if an unsupported option is specified
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
-     */
-//    public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
-//        if (options.length > 0) {
-//            for (OpenOption opt: options) {
-//                // All OpenOption values except for APPEND and WRITE are allowed
-//                if (opt == StandardOpenOption.APPEND ||
-//                    opt == StandardOpenOption.WRITE)
-//                    throw new UnsupportedOperationException("'" + opt + "' not allowed");
-//            }
-//        }
-//        //TODO
-//        return null;
-//    }
-    
 	@Override
 	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
 		return new ObjectSeekableByteStream(PathDetail.getBucket(), path.toString());
@@ -129,15 +83,9 @@ public class OssFileSystemProvider extends FileSystemProvider {
 		return toBosPath(path).newInputStream(path, options);
 	}
 	
-//	@Override
-//	public OutputStream newOutputStream(Path path, OpenOption... options) throws IOException {
-//		if (options ==null || !Sets.newHashSet(options).contains(StandardOpenOption.CREATE)) {
-//			throw new RuntimeException("only support option:CREATE!");
-//		} 
-//		
-//		return toBosPath(path).newOutputStream(path);
-//	}
-
+	/* 获取文件夹信息,如里面的文件
+	 * @see java.nio.file.spi.FileSystemProvider#newDirectoryStream(java.nio.file.Path, java.nio.file.DirectoryStream.Filter)
+	 */
 	@Override
 	public DirectoryStream<Path> newDirectoryStream(Path dir, Filter<? super Path> filter) throws IOException {
 		return toBosPath(dir).newDirectoryStream(filter);
@@ -170,23 +118,26 @@ public class OssFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public boolean isHidden(Path path) throws IOException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public FileStore getFileStore(Path path) throws IOException {
-		return toBosPath(path).getFileStore();
+		throw new RuntimeException("no supported!");
 	}
 
 	@Override
 	public void checkAccess(Path path, AccessMode... modes) throws IOException {
-		toBosPath(path).getFileSystem().checkAccess(toBosPath(path), modes);
+//		toBosPath(path).getFileSystem().checkAccess(toBosPath(path), modes);
+//		throw new UnsupportedOperationException("method no supported! method=checkAccess");
+		toBosPath(path).checkAccess(modes);
 	}
 
 	@Override
 	public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
-		return toBosPath(path).getFileSystem().getView(toBosPath(path), type);
+//		return toBosPath(path).getFileSystem().getView(toBosPath(path), type);
+//		throw new UnsupportedOperationException("method no supported! method=getFileAttributeView");
+		return (V) new OssFileAttrbuteView(toBosPath(path));
 	}
 
 	@Override
@@ -197,20 +148,23 @@ public class OssFileSystemProvider extends FileSystemProvider {
 //		if (type == PosixFileAttributes.class)
 //			return (A) toBosPath(path).getPosixAttributes();
 		
-		throw new UnsupportedOperationException("readAttributes:" + type.getName());
+//		throw new UnsupportedOperationException("method no supported! method=readAttributes");
+		// move 方法会调用
+		return (A) toBosPath(path).readAttributes(type, options);
 	}
 
 	@Override
 	public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
 		// TODO 
 //		toBosPath(path).getFileSystem().readAttributes(toBosPath(path), attributes, options);
-		return null;
+		throw new UnsupportedOperationException("method no supported! method=readAttributes");
 	}
 
 	@Override
 	public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
 		// TODO Auto-generated method stub
 //		toBosPath(path).getFileSystem().setAttribute(toBosPath(path), attribute, value, options);
+		throw new UnsupportedOperationException("method no supported! method=setAttribute");
 	}
 
 }

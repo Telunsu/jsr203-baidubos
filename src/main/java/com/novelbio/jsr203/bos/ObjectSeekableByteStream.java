@@ -9,11 +9,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import javax.print.attribute.standard.Finishings;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +22,10 @@ import org.slf4j.LoggerFactory;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.OSSObject;
-import com.aliyun.oss.model.UploadPartRequest;
+import com.aliyun.oss.model.PartETag;
 
 /**
- * 用于百度bos的随机读功能
+ * 用于阿里云oss的随机读功能
  * 
  * @author zong0jie
  * @data 20160827
@@ -32,7 +33,12 @@ import com.aliyun.oss.model.UploadPartRequest;
 public class ObjectSeekableByteStream implements SeekableByteChannel {
 	private static final Logger logger = LoggerFactory.getLogger(ObjectSeekableByteStream.class);
 	
+	/** 分块大小,默认1G */
+	long PART_SIZE = 1 << 30;
+	
 	OSSClient client = OssInitiator.getClient();
+	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于50，则多余线程会放入队列中依次执行
+	CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(Executors.newFixedThreadPool(50));
 
 	long position = 0;
 	String bucketName;
@@ -40,21 +46,20 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	OutputStream outputStream;
 	/** 本地临时缓存文件 */
 	File tempFile = null;
+	/** 每一块临时文件记录下来,上传完成后删除. */
 	List<String> lsTempFile = new ArrayList<>();
 	/** 写入的流的长度 */
 	long length;
-	/** 分块大小,默认1G */
-	long partSize = 1 << 30;
 	/** 块编号 */
 	int partNum = 0;
 	/** 上传id */
 	String uploadId;
-	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于10，则多余线程会放入队列中依次执行
-	ExecutorService executorService = Executors.newFixedThreadPool(50);
+	boolean ossFileExist = false;
 
 	public ObjectSeekableByteStream(String bucketName, String fileName) {
 		this.bucketName = bucketName;
 		this.fileName = fileName;
+		ossFileExist = client.doesObjectExist(PathDetail.getBucket(), fileName);
 	}
 
 	@Override
@@ -68,7 +73,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			uploadPart(true);
 		}
 		
-		finish();
+		if (partNum > 0) {
+			finish();
+		}
 	}
 
 	@Override
@@ -84,7 +91,6 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			dst.position(dst.limit());
 			position = position + dst.limit() - dstPos;
 			is.close();
-			
 		} catch (Exception e) {
 			num = -1;
 		}
@@ -93,6 +99,10 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public int write(ByteBuffer src) throws IOException {
+		if (ossFileExist) {
+			throw new RuntimeException("file exist. please delete first!");
+		}
+		
 		int len = src.remaining();
 		src.position(src.position() + len);
 
@@ -104,7 +114,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		
 		outputStream.write(src.array(), 0, len);
 		length = length + len;
-		if (length >= partSize) {
+		if (length >= PART_SIZE) {
 			uploadPart(false);
 		}
 		
@@ -117,7 +127,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		outputStream.close();
 		partNum++;
 		// 线程执行。将分好的文件块加入到list集合中
-		executorService.execute(new AliyunOSSUpload(tempFile, 0, length, partNum, uploadId, fileName, bucketName));
+		completionService.submit(new AliyunOSSUpload(tempFile, 0, length, partNum, uploadId, fileName));
 		length = 0;
 		lsTempFile.add(tempFile.getAbsolutePath());
 		if (!isEnd) {
@@ -127,35 +137,38 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	}
 	
 	private void finish() {
-		/**
-		 * 等待所有分片完毕
-		 */
-		// 关闭线程池（线程池不马上关闭），执行以前提交的任务，但不接受新任务。
-		executorService.shutdown();
-		// 如果关闭后所有任务都已完成，则返回 true。
-		while (!executorService.isTerminated()) {
+//		/**
+//		 * 等待所有分片完毕
+//		 */
+//		// 关闭线程池（线程池不马上关闭），执行以前提交的任务，但不接受新任务。
+//		executorService.shutdown();
+//		// 如果关闭后所有任务都已完成，则返回 true。
+//		while (!executorService.isTerminated()) {
+//			try {
+//				// 用于等待子线程结束，再继续执行下面的代码
+//				executorService.awaitTermination(5, TimeUnit.SECONDS);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
+		List<PartETag> lsPartETags = new ArrayList<>();
+		for (int i = 0; i < partNum; i++) {
 			try {
-				// 用于等待子线程结束，再继续执行下面的代码
-				executorService.awaitTermination(5, TimeUnit.SECONDS);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+				PartETag partETag = completionService.take().get();
+				logger.info("线程{}运行结束", i);
+				lsPartETags.add(partETag);
+			} catch (InterruptedException | ExecutionException e) {
+				System.err.printf("并发处理异常：%s\n", e.getMessage());
+				logger.error("execute executeUpload error.", e);
+				// XXX 一旦并发异常，程序就卡死在这里，需要处理
 			}
 		}
 
-		/**
-		 * partETags(上传块的ETag与块编号（PartNumber）的组合) 如果校验与之前计算的分块大小不同，则抛出异常
-		 */
-		System.out.println(AliyunOSSUpload.partETags.size()  +" -----   " + partNum );
-		if (AliyunOSSUpload.partETags.size() != partNum) {
-			throw new IllegalStateException("OSS分块大小与文件所计算的分块大小不一致");
-		} else {
-			logger.info("将要上传的文件名  " + fileName + "\n");
-		}
-
+		logger.info("将要上传的文件名  " + fileName + "\n");
 		/*
 		 * 列出文件所有的分块清单并打印到日志中，该方法仅仅作为输出使用
 		 */
-		AliyunOSSUpload.listAllParts(uploadId);
+		AliyunOSSUpload.listAllParts(uploadId, fileName);
 		
 		lsTempFile.forEach(filePath -> {
 			new File(filePath).delete();
@@ -164,7 +177,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		/*
 		 * 完成分块上传
 		 */
-		AliyunOSSUpload.completeMultipartUpload(uploadId);
+		AliyunOSSUpload.completeMultipartUpload(lsPartETags, uploadId);
 		
 		// 返回上传文件的URL地址
 		String path = PathDetail.getEndpoint() + "/" + bucketName + "/" + fileName;
