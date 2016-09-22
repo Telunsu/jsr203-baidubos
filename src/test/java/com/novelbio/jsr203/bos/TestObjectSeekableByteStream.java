@@ -4,51 +4,54 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.baidubce.services.bos.BosClient;
-import com.baidubce.services.bos.BosObjectInputStream;
-import com.baidubce.services.bos.model.BosObject;
-import com.baidubce.services.bos.model.GetObjectRequest;
+import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.model.GetObjectRequest;
+import com.aliyun.oss.model.OSSObject;
 
 public class TestObjectSeekableByteStream {
 
 	ObjectSeekableByteStream objectSeekableByteStream;
+	
+	String Key = "arabidopsis_rna_2.fq";
 
 	@Test
 	public void testObjectSeekableByteStream() {
-		objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), "fansTest/test1/1");
+		objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), Key);
 		assertNotNull(objectSeekableByteStream);
 	}
 
 	@Test
 	public void testRead() {
+		String content = null;
 		try {
-			// 该文件大小71字节
-			objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), "fansTest/test1/1");
-			ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+			objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), Key);
+			ByteBuffer byteBuffer = ByteBuffer.allocate(9);
 			int i = objectSeekableByteStream.read(byteBuffer);
-			System.out.println(i);
 			Assert.assertTrue(i > 0);
-			System.out.println("testRead1=" + new String(byteBuffer.array()));
+			content = new String(byteBuffer.array());
+			System.out.println("testRead1=" + content);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		try {
-			BosClient client = BosInitiator.getClient();
-			GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetail.getBucket(), "q/DownFile2016-08-29.xls");
+			OSSClient client = OssInitiator.getClient();
+			GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetail.getBucket(), Key);
 			// 获取文件部分内容.如果指定值超出文件大小会抛异常.
-			getObjectRequest.setRange(0, 12);
-			BosObject object = client.getObject(getObjectRequest);
-			BosObjectInputStream is = object.getObjectContent();
+			getObjectRequest.setRange(0, 8);
+			OSSObject object = client.getObject(getObjectRequest);
+			InputStream is = object.getObjectContent();
 			BufferedReader bfR = new BufferedReader(new InputStreamReader(is));
-			String content = bfR.readLine();
-			System.out.println("testRead2=" + content);
+			String content2 = bfR.readLine();
+			System.out.println("testRead2=" + content2);
+			Assert.assertEquals(content, content2);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -57,11 +60,11 @@ public class TestObjectSeekableByteStream {
 	
 	 @Test
 	 public void testPositionLong() {
-		 objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), "fansTest/test1/1");
+		 this.objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), Key);
 		 try {
-			 objectSeekableByteStream = (ObjectSeekableByteStream) objectSeekableByteStream.position(10);
+			 ObjectSeekableByteStream objectSeekableByteStream = (ObjectSeekableByteStream) this.objectSeekableByteStream.position(10);
 			 assertNotNull(objectSeekableByteStream);
-			 Assert.assertTrue(objectSeekableByteStream.position == 10);
+			 Assert.assertTrue(objectSeekableByteStream.position() == 10);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -70,7 +73,7 @@ public class TestObjectSeekableByteStream {
 	 @Test
 	public void testSize() {
 		try {
-			objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), "fansTest/test1/1");
+			objectSeekableByteStream = new ObjectSeekableByteStream(PathDetail.getBucket(), Key);
 			Assert.assertTrue(objectSeekableByteStream.size() > 0);
 		} catch (IOException e) {
 			e.printStackTrace();
