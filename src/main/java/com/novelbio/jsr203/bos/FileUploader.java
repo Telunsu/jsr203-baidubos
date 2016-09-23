@@ -16,14 +16,19 @@ import com.aliyun.oss.model.PartETag;
 
 public class FileUploader {
 
-	private static Logger logger = LoggerFactory.getLogger(FileUploader.class);
+	private static Logger logger = LoggerFactory.getLogger(FileCopyer.class);
 
 	// 创建OSSClient实例
 	protected static OSSClient client = OssInitiator.getClient();
 	
 	public static void main(String[] args) {
-		fileUpload(new File("/home/novelbio/下载/rawdata/S0h7-1.bam"));
-		fileUpload(new File("/home/novelbio/下载/rawdata/S0h7-5-1.bam"));
+//		fileUpload(new File("/home/novelbio/下载/rawdata/S0h7-1.bam"));
+//		fileUpload(new File("/home/novelbio/下载/rawdata/S0h7-5-1.bam"));
+
+		long time1 = System.currentTimeMillis();
+		fileUpload(new File("/home/novelbio/下载/ubuntu-mate-16.04.1-desktop-amd64.iso"));
+		long time2 = System.currentTimeMillis();
+		System.out.println("upload file time = " + (time2 - time1));
 	}
 
 
@@ -36,8 +41,8 @@ public class FileUploader {
 		String key = file.getName(); // 获取上传文件的名称，作为在OSS上的文件名
 		try {
 			String uploadId = AliyunOSSUpload.claimUploadId(PathDetail.getBucket(), key);
-			// 设置每块为 5M(除最后一个分块以外，其他的分块大小都要大于5MB)
-			final long partSize = 5 * 1024 * 1024L;
+			// 设置分块大小
+			final long partSize = ObjectSeekableByteStream.UPLOAD_PART_SIZE;
 			// 计算分块数目
 			long fileLength = file.length();
 			int partCount = (int) (fileLength / partSize);
@@ -103,8 +108,8 @@ public class FileUploader {
 			
 			/*
 			 * 列出文件所有的分块清单并打印到日志中，该方法仅仅作为输出使用
-			 */
 			AliyunOSSUpload.listAllParts(uploadId, key);
+			 */
 
 			/*
 			 * 完成分块上传

@@ -359,11 +359,6 @@ public class OssFileSystem extends FileSystem {
 	}
 
 
-//	public boolean exists(Path rawResolvedPath) throws IOException{
-//		// TODO Auto-generated method stub
-//		return false;
-//	}
-
 	public void checkAccess(OssPath bosPath, AccessMode[] modes) {
 		// TODO Auto-generated method stub
 		
@@ -391,8 +386,15 @@ public class OssFileSystem extends FileSystem {
 		if (client.doesObjectExist(PathDetail.getBucket(), target.toString())) {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
-		CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
-		client.copyObject(copyObjectRequest);
+		
+		OSSObject ossObject = client.getObject(PathDetail.getBucket(), source.toString());
+		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
+			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
+			client.copyObject(copyObjectRequest);
+		} else {
+			//小文件直接拷贝,大文件需分块拷贝.
+			FileCopyer.fileCopy(source.toString(), target.toString());
+		}
 	}
 
 	/**
@@ -407,8 +409,15 @@ public class OssFileSystem extends FileSystem {
 		if (client.doesObjectExist(PathDetail.getBucket(), target.toString())) {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
-		CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
-		client.copyObject(copyObjectRequest);
+		
+		OSSObject ossObject = client.getObject(PathDetail.getBucket(), source.toString());
+		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
+			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
+			client.copyObject(copyObjectRequest);
+		} else {
+			FileCopyer.fileCopy(source.toString(), target.toString());
+		}
+		
 		client.deleteObject(PathDetail.getBucket(), source.toString());
 	}
 

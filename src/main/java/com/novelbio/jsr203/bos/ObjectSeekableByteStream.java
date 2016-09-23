@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +32,13 @@ import com.aliyun.oss.model.PartETag;
 public class ObjectSeekableByteStream implements SeekableByteChannel {
 	private static final Logger logger = LoggerFactory.getLogger(ObjectSeekableByteStream.class);
 	
-	/** 分块大小,默认1G */
-//	long PART_SIZE = 1 << 30;
-	long PART_SIZE = 1 << 20;
+	/** 上传文件单位分块大小,默认1G */
+	public static final long UPLOAD_PART_SIZE = 1l << 30;
 	
 	OSSClient client = OssInitiator.getClient();
-	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于50，则多余线程会放入队列中依次执行
-	CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(Executors.newFixedThreadPool(50));
+	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于100，则多余线程会放入队列中依次执行
+	ExecutorService executorService = Executors.newFixedThreadPool(100);
+	CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
 
 	long position = 0;
 	String bucketName;
@@ -75,6 +74,8 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		if (partNum > 0) {
 			finish();
 		}
+		
+		executorService.shutdown();
 	}
 
 	@Override
@@ -113,7 +114,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		
 		outputStream.write(src.array(), 0, len);
 		length = length + len;
-		if (length >= PART_SIZE) {
+		if (length >= UPLOAD_PART_SIZE) {
 			uploadPart(false);
 		}
 		
@@ -135,20 +136,6 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	}
 	
 	private void finish() {
-//		/**
-//		 * 等待所有分片完毕
-//		 */
-//		// 关闭线程池（线程池不马上关闭），执行以前提交的任务，但不接受新任务。
-//		executorService.shutdown();
-//		// 如果关闭后所有任务都已完成，则返回 true。
-//		while (!executorService.isTerminated()) {
-//			try {
-//				// 用于等待子线程结束，再继续执行下面的代码
-//				executorService.awaitTermination(5, TimeUnit.SECONDS);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//		}
 		List<PartETag> lsPartETags = new ArrayList<>();
 		for (int i = 0; i < partNum; i++) {
 			try {
@@ -165,13 +152,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		logger.info("将要上传的文件名  " + fileName + "\n");
 		/*
 		 * 列出文件所有的分块清单并打印到日志中，该方法仅仅作为输出使用
-		 */
 		AliyunOSSUpload.listAllParts(uploadId, fileName);
+		 */
 		
-//		lsTempFile.forEach(filePath -> {
-//			new File(filePath).delete();
-//		});
-
 		/*
 		 * 完成分块上传
 		 */
