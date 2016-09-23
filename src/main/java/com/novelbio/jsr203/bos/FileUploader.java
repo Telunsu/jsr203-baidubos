@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
@@ -22,11 +23,11 @@ public class FileUploader {
 	protected static OSSClient client = OssInitiator.getClient();
 	
 	public static void main(String[] args) {
-//		fileUpload(new File("/home/novelbio/下载/rawdata/S0h7-1.bam"));
-//		fileUpload(new File("/home/novelbio/下载/rawdata/S0h7-5-1.bam"));
-
 		long time1 = System.currentTimeMillis();
-		fileUpload(new File("/home/novelbio/下载/ubuntu-mate-16.04.1-desktop-amd64.iso"));
+//		fileUpload(new File("/home/novelbio/下载/rawdata/BG.txt"));
+		fileUpload(new File("/home/novelbio/下载/rawdata/arabidopsis_rna_1.fq.gz"));
+
+//		fileUpload(new File("/home/novelbio/下载/ubuntu-mate-16.04.1-desktop-amd64.iso"));
 		long time2 = System.currentTimeMillis();
 		System.out.println("upload file time = " + (time2 - time1));
 	}
@@ -36,7 +37,8 @@ public class FileUploader {
 		System.out.println("upload file " + file.getName());
 		
 		// 创建一个可重用固定线程数的线程池。若同一时间线程数大于10，则多余线程会放入队列中依次执行
-		CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(Executors.newFixedThreadPool(10));
+		ExecutorService executorService = Executors.newFixedThreadPool(10);
+		CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
 		
 		String key = file.getName(); // 获取上传文件的名称，作为在OSS上的文件名
 		try {
@@ -114,7 +116,7 @@ public class FileUploader {
 			/*
 			 * 完成分块上传
 			 */
-			AliyunOSSUpload.completeMultipartUpload(lsPartETags, uploadId);
+			AliyunOSSUpload.completeMultipartUpload(file.getName(), lsPartETags, uploadId);
 			
 			// 返回上传文件的URL地址
 //			return endpoint + "/" + bucketName + "/" + client.getObject(bucketName, key).getKey();
@@ -124,6 +126,7 @@ public class FileUploader {
 			throw e;
 //			return "上传失败！";
 		} finally {
+			executorService.shutdown();
 //			if (client != null) {
 //				client.shutdown();
 //			}

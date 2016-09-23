@@ -32,13 +32,16 @@ import com.aliyun.oss.model.PartETag;
 public class ObjectSeekableByteStream implements SeekableByteChannel {
 	private static final Logger logger = LoggerFactory.getLogger(ObjectSeekableByteStream.class);
 	
-	/** 上传文件单位分块大小,默认1G */
+	/** 
+	 * 上传文件单位分块大小,默认1G
+	 * TODO 这个在本地远程测试效果一般,但考虑将来在阿里patch中每秒60M+的传输速率.特设置这么大,后续可根据需要调整.
+	 */
 	public static final long UPLOAD_PART_SIZE = 1l << 30;
 	
 	OSSClient client = OssInitiator.getClient();
 	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于100，则多余线程会放入队列中依次执行
-	ExecutorService executorService = Executors.newFixedThreadPool(100);
-	CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
+	ExecutorService executorService = null;
+	CompletionService<PartETag> completionService = null;
 
 	long position = 0;
 	String bucketName;
@@ -75,7 +78,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			finish();
 		}
 		
-		executorService.shutdown();
+		if (executorService != null) {
+			executorService.shutdown();
+		}
 	}
 
 	@Override
@@ -110,6 +115,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			tempFile = File.createTempFile(fileName, ".tmp");
 			outputStream = new FileOutputStream(tempFile);
 			uploadId = AliyunOSSUpload.claimUploadId(bucketName, fileName);
+			
+			executorService = Executors.newFixedThreadPool(100);
+			completionService = new ExecutorCompletionService<PartETag>(executorService);
 		}
 		
 		outputStream.write(src.array(), 0, len);
@@ -158,7 +166,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		/*
 		 * 完成分块上传
 		 */
-		AliyunOSSUpload.completeMultipartUpload(lsPartETags, uploadId);
+		AliyunOSSUpload.completeMultipartUpload(fileName, lsPartETags, uploadId);
 		
 		// 返回上传文件的URL地址
 		String path = PathDetail.getEndpoint() + "/" + bucketName + "/" + fileName;

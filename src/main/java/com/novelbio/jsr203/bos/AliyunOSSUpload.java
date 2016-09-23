@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -27,18 +26,16 @@ import com.aliyun.oss.model.UploadPartResult;
 public class AliyunOSSUpload implements Callable<PartETag> {
 	private static Logger logger = LoggerFactory.getLogger(AliyunOSSUpload.class);
 
+	protected static OSSClient client = OssInitiator.getClient();
+	private static String bucketName = PathDetail.getBucket();
+
 	private File localFile;
 	private long startPos;
-
 	private long partSize;
 	private int partNumber;
 	private String uploadId;
-	private static String key;
-	private static String bucketName = PathDetail.getBucket();
+	private String key;
 	private boolean isTempFile;
-	
-	
-	protected static OSSClient client = OssInitiator.getClient();
 
 	/**
 	 * 创建构造方法
@@ -81,13 +78,13 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 			UploadPartRequest uploadPartRequest = new UploadPartRequest();
 			uploadPartRequest.setBucketName(bucketName);
 			uploadPartRequest.setKey(key);
-			uploadPartRequest.setUploadId(this.uploadId);
+			uploadPartRequest.setUploadId(uploadId);
 			uploadPartRequest.setInputStream(instream);
-			uploadPartRequest.setPartSize(this.partSize);
-			uploadPartRequest.setPartNumber(this.partNumber);
+			uploadPartRequest.setPartSize(partSize);
+			uploadPartRequest.setPartNumber(partNumber);
 
 			UploadPartResult uploadPartResult = client.uploadPart(uploadPartRequest);
-			logger.info("Part#" + this.partNumber + " done\n");
+			logger.info("Part#" + partNumber + " done\n");
 			if (isTempFile && localFile.length() == partSize) {
 				localFile.delete();
 			}
@@ -125,7 +122,7 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 	 * 
 	 * @param uploadId
 	 */
-	protected static void completeMultipartUpload(List<PartETag> partETags, String uploadId) {
+	protected static void completeMultipartUpload(String key, List<PartETag> partETags, String uploadId) {
 		// 将文件分块按照升序排序
 		Collections.sort(partETags, new Comparator<PartETag>() {
 			@Override

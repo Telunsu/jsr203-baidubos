@@ -23,15 +23,16 @@ import com.aliyun.oss.model.UploadPartCopyResult;
 public class AliyunOSSCopy implements Callable<PartETag> {
 	private static Logger logger = LoggerFactory.getLogger(AliyunOSSCopy.class);
 
+	protected static OSSClient client = OssInitiator.getClient();
+	private static String bucketName = PathDetail.getBucket();
+
 	private String sourceKey;
 	private String targetKey;
 	private long partSize;
 	private int partNumber;
 	private String uploadId;
-	private static String bucketName = PathDetail.getBucket();
 	
 	
-	protected static OSSClient client = OssInitiator.getClient();
 
 	/**
 	 * 创建构造方法
