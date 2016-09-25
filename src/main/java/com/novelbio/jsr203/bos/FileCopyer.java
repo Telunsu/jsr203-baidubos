@@ -40,9 +40,9 @@ public class FileCopyer {
 		CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
 		
 		try {
-			String uploadId = AliyunOSSCopy.claimUploadId(PathDetail.getBucket(), target);
+			String uploadId = AliyunOSSCopy.claimUploadId(PathDetailOs.getBucket(), target);
 			
-			OSSObject ossObject = client.getObject(PathDetail.getBucket(), source);
+			OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source);
 			
 			long length = ossObject.getObjectMetadata().getContentLength();
 

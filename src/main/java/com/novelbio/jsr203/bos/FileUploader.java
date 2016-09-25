@@ -42,7 +42,7 @@ public class FileUploader {
 		
 		String key = file.getName(); // 获取上传文件的名称，作为在OSS上的文件名
 		try {
-			String uploadId = AliyunOSSUpload.claimUploadId(PathDetail.getBucket(), key);
+			String uploadId = AliyunOSSUpload.claimUploadId(PathDetailOs.getBucket(), key);
 			// 设置分块大小
 			final long partSize = ObjectSeekableByteStream.UPLOAD_PART_SIZE;
 			// 计算分块数目
