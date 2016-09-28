@@ -33,6 +33,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
@@ -45,6 +48,8 @@ import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.UploadPartRequest;
 
+import net.sf.json.JSON;
+
 /**
  * 阿里云oss文件系统
  * 
@@ -52,6 +57,8 @@ import com.aliyun.oss.model.UploadPartRequest;
  *
  */
 public class OssFileSystem extends FileSystem {
+	private static final Logger logger = LoggerFactory.getLogger(OssFileSystem.class);
+	
 	private static final String DIR_SUFFIX = ".exist";
 
 	private boolean readOnly;
@@ -95,7 +102,7 @@ public class OssFileSystem extends FileSystem {
 
 	@Override
 	public Iterable<Path> getRootDirectories() {
-		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(PathDetail.getBucket());
+		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(OssConfig.getBucket());
 		// "/" 为文件夹的分隔符
 		listObjectsRequest.setDelimiter("/");
 		// 列出根目录下的所有文件和文件夹
@@ -206,27 +213,31 @@ public class OssFileSystem extends FileSystem {
 	 */
 	public Iterator<Path> iteratorOf(OssPath ossPath, java.nio.file.DirectoryStream.Filter<? super Path> filter) throws Exception {
 		List<Path> lsOssPath = new ArrayList<>();
-		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(PathDetail.getBucket());
+		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(OssConfig.getBucket());
 		// "/" 为文件夹的分隔符
 		listObjectsRequest.setDelimiter("/");
 		// 列出ossPath目录下的内容
-		listObjectsRequest.setPrefix(ossPath.toString());
+		String path = ossPath.toString();
+		if (!path.endsWith("/")) {
+			path = path + "/";
+		}
+		listObjectsRequest.setPrefix(path);
 		ObjectListing objectListing = OssInitiator.getClient().listObjects(listObjectsRequest);
 
 		if (objectListing.getCommonPrefixes() != null) {
 			for (String name : objectListing.getCommonPrefixes()) {
-				URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + name);
+				URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + name);
 				lsOssPath.add(fileSystemProvider.getPath(uri));
 			}
 		}
 
 		if (objectListing.getObjectSummaries() != null) {
 			for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
-				if (summary.getKey().equals(ossPath.toString())) {
+				if (summary.getKey().equals(path)) {
 					// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
 					continue;
 				}
-				URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + summary.getKey());
+				URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + summary.getKey());
 				lsOssPath.add(fileSystemProvider.getPath(uri));
 			}
 		}
@@ -274,8 +285,8 @@ public class OssFileSystem extends FileSystem {
 //		String[] bucket2Key = getBucket2Key(absolutePathStr);
 		try {
 			// TODO 删除文件,需判断是不是一个文件,不能把文件夹删除了.
-			if (client.doesObjectExist(PathDetail.getBucket(), path.toString())) {
-				client.deleteObject(PathDetail.getBucket(), path.toString());
+			if (client.doesObjectExist(OssConfig.getBucket(), path.toString())) {
+				client.deleteObject(OssConfig.getBucket(), path.toString());
 			}
 		} catch (OSSException|ClientException e) {
 			throw e;
@@ -287,11 +298,12 @@ public class OssFileSystem extends FileSystem {
 			path = path + "/";
 		}
 		
-		if (client.doesObjectExist(PathDetail.getBucket(), path)) {
-			throw new RuntimeException("path is existed.path=" + path);
+		if (client.doesObjectExist(OssConfig.getBucket(), path)) {
+			logger.warn("path is existed.path=" + path);
+			return;
 		}
 		
-		client.putObject(PathDetail.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
+		client.putObject(OssConfig.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
 	}
 
 	/**
@@ -321,7 +333,7 @@ public class OssFileSystem extends FileSystem {
 		path = removeSplashHead(path, false);
 		String uploadPath = path.replaceFirst(OssFileSystemProvider.SCHEME + ":", "");
 		uploadPath = removeSplashHead(uploadPath, false);
-		return new String[] { PathDetail.getBucket(), uploadPath };
+		return new String[] { OssConfig.getBucket(), uploadPath };
 	}
 
 	/**
@@ -370,7 +382,7 @@ public class OssFileSystem extends FileSystem {
 	}
 
 	public InputStream newInputStream(Path path, OpenOption[] options) {
-		GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetail.getBucket(), path.toString());
+		GetObjectRequest getObjectRequest = new GetObjectRequest(OssConfig.getBucket(), path.toString());
 		OSSObject bosObject = client.getObject(getObjectRequest);
 		return bosObject.getObjectContent();
 	}
@@ -380,16 +392,16 @@ public class OssFileSystem extends FileSystem {
 	}
 
 	public void copy(OssPath source, OssPath target) {
-		if (!client.doesObjectExist(PathDetail.getBucket(), source.toString())) {
+		if (!client.doesObjectExist(OssConfig.getBucket(), source.toString())) {
 			throw new RuntimeException("source file not exist! source=" + source);
 		}
-		if (client.doesObjectExist(PathDetail.getBucket(), target.toString())) {
+		if (client.doesObjectExist(OssConfig.getBucket(), target.toString())) {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
 		
-		OSSObject ossObject = client.getObject(PathDetail.getBucket(), source.toString());
+		OSSObject ossObject = client.getObject(OssConfig.getBucket(), source.toString());
 		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
-			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
+			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(OssConfig.getBucket(), source.toString(), OssConfig.getBucket(), target.toString());
 			client.copyObject(copyObjectRequest);
 		} else {
 			//小文件直接拷贝,大文件需分块拷贝.
@@ -403,32 +415,40 @@ public class OssFileSystem extends FileSystem {
 	 * @param target
 	 */
 	public void move(OssPath source, OssPath target) {
-		if (!client.doesObjectExist(PathDetail.getBucket(), source.toString())) {
+		if (!client.doesObjectExist(OssConfig.getBucket(), source.toString())) {
 			throw new RuntimeException("source file not exist! source=" + source);
 		}
-		if (client.doesObjectExist(PathDetail.getBucket(), target.toString())) {
+		if (client.doesObjectExist(OssConfig.getBucket(), target.toString())) {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
 		
-		OSSObject ossObject = client.getObject(PathDetail.getBucket(), source.toString());
+		OSSObject ossObject = client.getObject(OssConfig.getBucket(), source.toString());
 		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
-			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetail.getBucket(), source.toString(), PathDetail.getBucket(), target.toString());
+			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(OssConfig.getBucket(), source.toString(), OssConfig.getBucket(), target.toString());
 			client.copyObject(copyObjectRequest);
 		} else {
 			FileCopyer.fileCopy(source.toString(), target.toString());
 		}
 		
-		client.deleteObject(PathDetail.getBucket(), source.toString());
+		client.deleteObject(OssConfig.getBucket(), source.toString());
 	}
 
 	public <A extends BasicFileAttributes> A readAttributes(OssPath ossPath, Class<A> type, LinkOption[] options) {
-		OSSObject ossObject = client.getObject(PathDetail.getBucket(), ossPath.toString());
+		OSSObject ossObject = new OSSObject();
+		ossObject.setKey(ossPath.toString());
+//		if (client.doesObjectExist(OssConfig.getBucket(), ossPath.toString())) {
+//			ossObject = client.getObject(OssConfig.getBucket(), ossPath.toString());
+//		}
 		return (A) new OssFileAttributes(ossObject);
 	}
 
 	public void readAttributes(OssPath path, AccessMode... modes) throws IOException {
 		try {
-			client.getObject(PathDetail.getBucket(), path.toString());
+			ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path.toString());
+			if (objectListing.getObjectSummaries() == null || objectListing.getObjectSummaries().isEmpty()) {
+				throw new IOException();
+			}
+			
 		} catch (OSSException e) {
 			throw new IOException(e);
 		}

@@ -27,7 +27,7 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 	private static Logger logger = LoggerFactory.getLogger(AliyunOSSUpload.class);
 
 	protected static OSSClient client = OssInitiator.getClient();
-	private static String bucketName = PathDetail.getBucket();
+	private static String bucketName = OssConfig.getBucket();
 
 	private File localFile;
 	private long startPos;

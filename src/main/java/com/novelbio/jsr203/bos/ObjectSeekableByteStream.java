@@ -60,7 +60,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	public ObjectSeekableByteStream(String bucketName, String fileName) {
 		this.bucketName = bucketName;
 		this.fileName = fileName;
-		ossFileExist = client.doesObjectExist(PathDetail.getBucket(), fileName);
+		ossFileExist = client.doesObjectExist(OssConfig.getBucket(), fileName);
 	}
 
 	@Override
@@ -169,7 +169,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		AliyunOSSUpload.completeMultipartUpload(fileName, lsPartETags, uploadId);
 		
 		// 返回上传文件的URL地址
-		String path = PathDetail.getEndpoint() + "/" + bucketName + "/" + fileName;
+		String path = OssConfig.getEndpoint() + "/" + bucketName + "/" + fileName;
 	}
 	
 	@Override

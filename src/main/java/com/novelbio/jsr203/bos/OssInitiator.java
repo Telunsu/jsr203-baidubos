@@ -10,9 +10,9 @@ import com.aliyun.oss.OSSClient;
  */
 public class OssInitiator {
 	    
-	private static String ACCESS_KEY_ID = PathDetail.getAccessKey();
-	private static String SECRET_ACCESS_KEY = PathDetail.getAccessKeySecret();
-	private static String endpoint = PathDetail.getEndpoint();
+	private static String ACCESS_KEY_ID = OssConfig.getAccessKey();
+	private static String SECRET_ACCESS_KEY = OssConfig.getAccessKeySecret();
+	private static String endpoint = OssConfig.getEndpoint();
 	private static OSSClient client; 
 	
     static {

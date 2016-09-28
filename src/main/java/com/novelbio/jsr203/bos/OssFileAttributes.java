@@ -17,12 +17,15 @@
 */
 package com.novelbio.jsr203.bos;
 
+import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 
+import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.ObjectMetadata;
 
 /**
@@ -31,9 +34,20 @@ import com.aliyun.oss.model.ObjectMetadata;
 public class OssFileAttributes implements BasicFileAttributes {
 	/** Internal implementation of file status */
 	private final OSSObject ossObject;
-
+	private static final OSSClient client = OssInitiator.getClient();
+	private OSSObjectSummary summary;
+	
 	public OssFileAttributes(OSSObject ossObject) {
 		this.ossObject = ossObject;
+		
+		String path = ossObject.getKey();
+		ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path);
+		for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
+			if (summary.getKey().equals(path) || summary.getKey().equals(path + "/")) {
+				this.summary = summary;
+				break;
+			}
+		}
 	}
 
 	@Override
@@ -48,7 +62,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public boolean isDirectory() {
-		return this.ossObject.getKey().endsWith("/");
+		return summary != null && summary.getSize() == 0;
 	}
 
 	@Override
@@ -74,12 +88,25 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public FileTime lastModifiedTime() {
-		return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		try {
+			if (this.ossObject.getObjectMetadata().getLastModified() != null) {
+				return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
+			} else {
+				return FileTime.from(this.summary.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+		return FileTime.from(0l, TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public long size() {
-		return this.ossObject.getObjectMetadata().getContentLength();
+		if (summary != null) {
+			return this.summary.getSize();
+		} else {
+			return this.ossObject.getObjectMetadata().getContentLength();
+		}
 	}
 
 	@Override

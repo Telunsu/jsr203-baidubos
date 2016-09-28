@@ -31,7 +31,7 @@ public class OssFileSystemProvider extends FileSystemProvider {
 
 	private static final Logger logger = LoggerFactory.getLogger(OssFileSystemProvider.class);
 	
-	public static final String SCHEME = "http";
+	public static final String SCHEME = "oss";
 	
 	  // Checks that the given file is a HadoopPath
 	static final OssPath toBosPath(Path path) {
@@ -71,7 +71,7 @@ public class OssFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		return new ObjectSeekableByteStream(PathDetail.getBucket(), path.toString());
+		return new ObjectSeekableByteStream(OssConfig.getBucket(), path.toString());
 	}
 	
 	/**

@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-public class PathDetail {
+public class OssConfig {
 	private static Properties properties;
 	static {
 		initial();
 	}
 	private static void initial() {
-		String configPath = "configbos.properties";
-		InputStream in = PathDetail.class.getClassLoader().getResourceAsStream(configPath);
+		String configPath = "configoss.properties";
+		InputStream in = OssConfig.class.getClassLoader().getResourceAsStream(configPath);
 		properties = new Properties();
 		try {
 			properties.load(in);

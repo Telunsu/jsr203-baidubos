@@ -17,10 +17,12 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 
+import org.assertj.core.api.SoftAssertions;
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.model.ObjectListing;
 import com.google.common.collect.Sets;
 
 public class TestOssFileSystemProvider {
@@ -31,10 +33,46 @@ public class TestOssFileSystemProvider {
 	public void testToBosPath() {
 		try {
 			String file2 = "small.txt";
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
 			OssPath ossPath = new OssFileSystemProvider().toBosPath(path);
 			Assert.assertNotNull(ossPath);
+			Assert.assertTrue(ossPath.toString().equals(file2));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			String file2 = "small.txt";
+			URI uri = new URI("oss://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
+			Path path = new OssFileSystemProvider().getPath(uri);
+			OssPath ossPath = new OssFileSystemProvider().toBosPath(path);
+			Assert.assertNotNull(ossPath);
+			Assert.assertTrue(ossPath.toString().equals(file2));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			// 不支持一个斜杠的
+			String file2 = "small.txt";
+			URI uri = new URI("oss:/" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
+			Path path = new OssFileSystemProvider().getPath(uri);
+			OssPath ossPath = new OssFileSystemProvider().toBosPath(path);
+			Assert.assertNotNull(ossPath);
+			Assert.assertFalse(ossPath.toString().equals(file2));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			// 不支持一个斜杠的
+			String file2 = "small.txt";
+			URI uri = new URI("oss:/" + file2);
+			Path path = new OssFileSystemProvider().getPath(uri);
+			OssPath ossPath = new OssFileSystemProvider().toBosPath(path);
+			Assert.assertNotNull(ossPath);
+			Assert.assertTrue(ossPath.toString().equals(file2));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -42,14 +80,14 @@ public class TestOssFileSystemProvider {
 
 	@Test
 	public void testGetScheme() {
-		Assert.assertEquals("http", new OssFileSystemProvider().getScheme());
+		Assert.assertEquals("oss", new OssFileSystemProvider().getScheme());
 	}
 
 	@Test
 	public void testNewFileSystemURIMapOfStringQ() {
 		try {
 			String file2 = "small.txt";
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			FileSystem fileSystem = new OssFileSystemProvider().newFileSystem(uri, new HashMap<>());
 			Assert.assertTrue(fileSystem instanceof OssFileSystem);
 		} catch (Exception e) {
@@ -61,7 +99,7 @@ public class TestOssFileSystemProvider {
 	public void testGetFileSystemURI() {
 		try {
 			String file2 = "small.txt";
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			FileSystem fileSystem =new OssFileSystemProvider().getFileSystem(uri);
 			Assert.assertTrue(fileSystem instanceof OssFileSystem);
 		} catch (Exception e) {
@@ -73,7 +111,7 @@ public class TestOssFileSystemProvider {
 	public void testGetPathURI() {
 		try {
 			String file2 = "small.txt";
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path =new OssFileSystemProvider().getPath(uri);
 			Assert.assertTrue(path instanceof OssPath);
 		} catch (Exception e) {
@@ -85,7 +123,7 @@ public class TestOssFileSystemProvider {
 	public void testNewByteChannelPathSetOfQextendsOpenOptionFileAttributeOfQArray() {
 		try {
 			String file2 = "small.txt";
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path =new OssFileSystemProvider().getPath(uri);
 			SeekableByteChannel channel = new OssFileSystemProvider().newByteChannel(path, Sets.newHashSet(StandardOpenOption.READ), null);
 			ByteBuffer bytebuffer = ByteBuffer.allocate(128);
@@ -101,7 +139,7 @@ public class TestOssFileSystemProvider {
 	public void testNewDirectoryStreamPathFilterOfQsuperPath() {
 		try {
 			String file2 = "novelbio/";
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
 			DirectoryStream<Path> directoryStream = new OssFileSystemProvider().newDirectoryStream(path, null);
 			if (directoryStream != null) {
@@ -122,12 +160,12 @@ public class TestOssFileSystemProvider {
 	public void testCreateDirectoryPathFileAttributeOfQArray() {
 		try {
 			String file2 = "novelbio/folderTest";
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
-			client.deleteObject(PathDetail.getBucket(), file2 + "/");
+			client.deleteObject(OssConfig.getBucket(), file2 + "/");
 			new OssFileSystemProvider().createDirectory(path, null);
 			
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), file2 + "/"));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), file2 + "/"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -137,8 +175,8 @@ public class TestOssFileSystemProvider {
 	public void testDeletePath() {
 		String file = "small.txt";
 		try {
-			client.putObject(PathDetail.getBucket(), file, new ByteArrayInputStream(new byte[]{}));
-			URI uri = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file);
+			client.putObject(OssConfig.getBucket(), file, new ByteArrayInputStream(new byte[]{}));
+			URI uri = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file);
 			Files.delete(new OssFileSystemProvider().getPath(uri));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -151,15 +189,15 @@ public class TestOssFileSystemProvider {
 			OssFileSystemProvider provider = new OssFileSystemProvider();
 			String file1 = "dataFile.txt";
 			String file2 = "dataFile_copy.txt";
-			URI uri1 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file1);
+			URI uri1 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file1);
 			Path path1 = provider.getPath(uri1);
-			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri2 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path2 = provider.getPath(uri2);
 			
-			client.putObject(PathDetail.getBucket(), file1, new File("/home/novelbio/data/small.txt"));
+			client.putObject(OssConfig.getBucket(), file1, new File("/home/novelbio/data/small.txt"));
 			
 			Files.copy(path1, path2, StandardCopyOption.COPY_ATTRIBUTES);
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), path2.toString()));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), path2.toString()));
 			Files.delete(path2);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -170,11 +208,11 @@ public class TestOssFileSystemProvider {
 			String file1 = "/home/novelbio/data/small.txt";
 			String file2 = "dataFile_copy2.txt";
 			Path path1 = new File(file1).toPath();
-			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri2 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path2 = provider.getPath(uri2);
 			
 			Files.copy(path1, path2, StandardCopyOption.REPLACE_EXISTING);
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), path2.toString()));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), path2.toString()));
 //			Files.delete(path2);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -185,11 +223,11 @@ public class TestOssFileSystemProvider {
 			String file1 = "/home/novelbio/data/small.txt";
 			String file2 = "dataFile_copy2.txt";
 			Path path1 = new File(file1).toPath();
-			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri2 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path2 = provider.getPath(uri2);
 			
 			Files.copy(path2, path1, StandardCopyOption.REPLACE_EXISTING);
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), path2.toString()));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), path2.toString()));
 //			Files.delete(path2);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -203,14 +241,14 @@ public class TestOssFileSystemProvider {
 			OssFileSystemProvider provider = new OssFileSystemProvider();
 			String file1 = "dataFile.txt";
 			String file2 = "dataFile_move.txt";
-			URI uri1 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file1);
+			URI uri1 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file1);
 			Path path1 = provider.getPath(uri1);
-			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri2 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path2 = provider.getPath(uri2);
 			
 			Files.move(path1, path2, StandardCopyOption.COPY_ATTRIBUTES);
 			
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), file2));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), file2));
 			
 			Files.move(path2, path1, StandardCopyOption.COPY_ATTRIBUTES);
 		} catch (Exception e) {
@@ -222,12 +260,12 @@ public class TestOssFileSystemProvider {
 			String file1 = "/home/novelbio/data/small.txt";
 			String file2 = "dataFile_move2.txt";
 			Path path1 = new File(file1).toPath();
-			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri2 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path2 = provider.getPath(uri2);
 			
 			Files.move(path1, path2, StandardCopyOption.COPY_ATTRIBUTES);
 			
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), file2));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), file2));
 			
 			Files.move(path2, path1, StandardCopyOption.COPY_ATTRIBUTES);
 		} catch (Exception e) {
@@ -239,12 +277,12 @@ public class TestOssFileSystemProvider {
 			String file1 = "/home/novelbio/data/small2.txt";
 			String file2 = "dataFile.txt";
 			Path path1 = new File(file1).toPath();
-			URI uri2 = new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file2);
+			URI uri2 = new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file2);
 			Path path2 = provider.getPath(uri2);
 			
 			Files.move(path2, path1, StandardCopyOption.COPY_ATTRIBUTES);
 			
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), file2));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), file2));
 			
 			Files.move(path2, path1, StandardCopyOption.COPY_ATTRIBUTES);
 		} catch (Exception e) {
@@ -269,12 +307,80 @@ public class TestOssFileSystemProvider {
 
 	@Test
 	public void testCheckAccessPathAccessModeArray() {
-		//fail("Not yet implemented");
+
+		try {
+			OssFileSystemProvider ossFileSystemProvider = new OssFileSystemProvider();
+			String path = "oss:/nbCloud/public/AllProject/A__2016-09/project_57ea175c45ce95f1d60f8af5/task_57ea391d45ceed1b0a58cee8/";
+			Path ossPath = ossFileSystemProvider.getPath(new URI(path));
+			ossFileSystemProvider.checkAccess(ossPath);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			OssFileSystemProvider ossFileSystemProvider = new OssFileSystemProvider();
+			String path = "oss:/nbCloud/public/AllProject/A__2016-09/project_57ea175c45ce95f1d60f8af5/task_57ea391d45ceed1b0a58cee8";
+			Path ossPath = ossFileSystemProvider.getPath(new URI(path));
+			ossFileSystemProvider.checkAccess(ossPath);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			OssFileSystemProvider ossFileSystemProvider = new OssFileSystemProvider();
+			String path = "oss:/nbCloud/public/AllProject/A__2016-09/project_57ea175c45ce95f1d60f8af5/task_57ea391d45ceed1b0a58cee8/";
+			Path ossPath = ossFileSystemProvider.getPath(new URI(path));
+			Files.createDirectories(ossPath);
+			
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			OssFileSystemProvider ossFileSystemProvider = new OssFileSystemProvider();
+			String path = "oss:/nbCloud/public/AllProject2/A__2016-09/project_57ea175c45ce95f1d60f8af5/task_57ea391d45ceed1b0a58cee8/";
+			Path ossPath = ossFileSystemProvider.getPath(new URI(path));
+			ossFileSystemProvider.checkAccess(ossPath);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
 	public void testGetFileAttributeViewPathClassOfVLinkOptionArray() {
-		//fail("Not yet implemented");
+		try {
+			String path = "nbCloud/public/AllProject/A__2016-09/project_57ea175c45ce95f1d60f8af5/task_57ea391d45ceed1b0a58cee8/";
+			OSSClient ossClient = OssInitiator.getClient();
+			ObjectListing objectListing = ossClient.listObjects(OssConfig.getBucket(), path);
+			SoftAssertions softAssertions = new SoftAssertions();
+			softAssertions.assertThat(objectListing.getObjectSummaries()).extracting("key").contains(path);
+			softAssertions.assertAll();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		try {
+			String path = "nbCloud/public/AllProject/A__2016-09/project_57ea175c45ce95f1d60f8af5/task_57eb2f9e45ceb63f392a317e/";
+			OSSClient ossClient = OssInitiator.getClient();
+			ObjectListing objectListing = ossClient.listObjects(OssConfig.getBucket(), path);
+			SoftAssertions softAssertions = new SoftAssertions();
+			softAssertions.assertThat(objectListing.getObjectSummaries()).extracting("key").contains(path);
+			softAssertions.assertAll();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			OssFileSystemProvider ossFileSystemProvider = new OssFileSystemProvider();
+			String path = "nbCloud2/public/AllProject/A__2016-09/project_57ea175c45ce95f1d60f8af5/task_57ea391d45ceed1b0a58cee8/";
+			OSSClient ossClient = OssInitiator.getClient();
+			ObjectListing objectListing = ossClient.listObjects(OssConfig.getBucket(), path);
+			SoftAssertions softAssertions = new SoftAssertions();
+			softAssertions.assertThat(objectListing.getObjectSummaries()).isEmpty();
+			softAssertions.assertAll();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
@@ -399,10 +505,10 @@ public class TestOssFileSystemProvider {
 		OutputStream os = null;
 		try {
 			String ossFileName = "dataFile.txt"	;
-			client.deleteObject(PathDetail.getBucket(), ossFileName);
-			File file = new File("/home/novelbio/data/arabidopsis_rna_2.fq");
+			client.deleteObject(OssConfig.getBucket(), ossFileName);
+			File file = new File("/home/novelbio/data/dataFile.txt");
 			is = Files.newInputStream(file.toPath());
-			Path path = new OssFileSystemProvider().getPath(new URI("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + ossFileName));
+			Path path = new OssFileSystemProvider().getPath(new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + ossFileName));
 			os = Files.newOutputStream(path, StandardOpenOption.CREATE);
 			byte[] buffer = new byte[128];
 			int len;
@@ -410,7 +516,7 @@ public class TestOssFileSystemProvider {
 				os.write(buffer, 0, len);
 			}
 			
-			Assert.assertTrue(client.doesObjectExist(PathDetail.getBucket(), ossFileName));
+			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), ossFileName));
 		} catch (Exception e) {
 			if (e instanceof RuntimeException) {
 				System.out.println(e.getMessage());

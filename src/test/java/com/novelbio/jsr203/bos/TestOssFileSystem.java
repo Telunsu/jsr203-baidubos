@@ -30,7 +30,7 @@ public class TestOssFileSystem {
 	
 	@Test
 	public void testDeleteFile() {
-		ObjectListing objectListing = client.listObjects(PathDetail.getBucket());
+		ObjectListing objectListing = client.listObjects(OssConfig.getBucket());
 		objectListing.getObjectSummaries().forEach(objsum -> System.out.println(objsum.getKey()));
 		
 		client.putObject("novelbio", "test/dir/exist", new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/small.txt"));
@@ -38,7 +38,7 @@ public class TestOssFileSystem {
 		OSSException exception = null;
 		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider());
 		String file = "small.txt";
-		ossFileSystem.deleteFile(new File("http://" + PathDetail.getBucket() + "." + PathDetail.getEndpoint() + "/" + file).toPath());
+		ossFileSystem.deleteFile(new File("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + file).toPath());
 		try {
 			OSSObject obj = client.getObject("novelbio", "test/dir/.exist");
 		} catch (Exception e) {
