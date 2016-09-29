@@ -6,8 +6,27 @@ import java.util.Properties;
 
 public class PathDetailOs {
 	private static Properties properties;
+	
+	private static String OBJECT_SAVE_SERVICE = null;
+	private static String STS_DOMAIN = null;
+	private static String ACCESS_KEY_ID = null;
+	private static String ACCESS_KEY_SECRET = null;
+	private static String ENDPOINT = null;
+	private static String REGION_ID = null;
+	private static String STS_API_VERSION = null;
+	private static String ROLE_ARN = null;
+	
 	static {
 		initial();
+		
+		OBJECT_SAVE_SERVICE = properties.getProperty("CLIENT_OBJECT_SAVE_SERVICE");
+		STS_DOMAIN = properties.getProperty("CLIENT_STS_DOMAIN");
+		ACCESS_KEY_ID = properties.getProperty("CLIENT_ACCESS_KEY_ID");
+		ACCESS_KEY_SECRET = properties.getProperty("CLIENT_ACCESS_KEY_SECRET");
+		ENDPOINT = properties.getProperty("CLIENT_ENDPOINT");
+		REGION_ID = properties.getProperty("CLIENT_REGION_ID");
+		STS_API_VERSION = properties.getProperty("CLIENT_STS_API_VERSION");
+		ROLE_ARN = properties.getProperty("CLIENT_ROLE_ARN");
 	}
 	private static void initial() {
 		String configPath = "configoss.properties";
@@ -29,6 +48,61 @@ public class PathDetailOs {
 		}
 	
 	}
+	
+	/**
+	 * 获取对象存储服务供应类型[ACS_OSS,BCE_BOS]，阿里云还是百度云
+	 * 
+	 * @return OBJECT_SAVE_SERVICE
+	 */
+	public static String getClientObjectSaveService() {
+		return OBJECT_SAVE_SERVICE;
+	}
+	
+	/**
+	 * 获取STS_DOMAIN
+	 * 
+	 * @return STS_DOMAIN
+	 */
+	public static String getClientStsDomain() {
+		return STS_DOMAIN;
+	}
+	
+	/**
+	 * 获取ACCESS_KEY_ID
+	 * 
+	 * @return ACCESS_KEY_ID
+	 */
+	public static String getClientAccessKeyID() {
+		return ACCESS_KEY_ID;
+	}
+	
+	/**
+	 * 获取ACCESS_KEY_SECRET
+	 * 
+	 * @return ACCESS_KEY_SECRET
+	 */
+	public static String getClientAccessKeySecret() {
+		return ACCESS_KEY_SECRET;
+	}
+	
+	/** 当前 STS API 版本 */
+	public static String getClientStsApiVersion() {
+		return STS_API_VERSION;
+	}
+
+	/** 目前只有"cn-hangzhou"这个region可用, 不要使用填写其他region的值 */
+	public static String getClientRegionId() {
+		return REGION_ID;
+	}
+	
+	public static String getClientRoleArn() {
+		return ROLE_ARN;
+	}
+
+	public static String getClientEndpoint() {
+		return ENDPOINT;
+	}
+	
 
 	/** BOS上的命名空间 */
 	public static String getBucket() {
