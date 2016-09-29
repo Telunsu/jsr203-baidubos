@@ -10,7 +10,7 @@ public class PathDetailOs {
 		initial();
 	}
 	private static void initial() {
-		String configPath = "configbos.properties";
+		String configPath = "configoss.properties";
 		InputStream in = PathDetailOs.class.getClassLoader().getResourceAsStream(configPath);
 		properties = new Properties();
 		try {

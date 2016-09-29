@@ -216,6 +216,7 @@ public class OssFileSystem extends FileSystem {
 			path = path + "/";
 		}
 		listObjectsRequest.setPrefix(path);
+		listObjectsRequest.setMaxKeys(10000);
 		ObjectListing objectListing = OssInitiator.getClient().listObjects(listObjectsRequest);
 
 		if (objectListing.getCommonPrefixes() != null) {
@@ -429,7 +430,13 @@ public class OssFileSystem extends FileSystem {
 	}
 
 	public <A extends BasicFileAttributes> A readAttributes(OssPath ossPath, Class<A> type, LinkOption[] options) {
-		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), ossPath.toString());
+		OSSObject ossObject = null;
+		if (client.doesObjectExist(PathDetailOs.getBucket(), ossPath.toString())) {
+			ossObject = client.getObject(PathDetailOs.getBucket(), ossPath.toString());
+		} else {
+			ossObject = new OSSObject();
+			ossObject.setKey(ossPath.toString());
+		}
 		return (A) new OssFileAttributes(ossObject);
 	}
 

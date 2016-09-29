@@ -92,8 +92,12 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public FileTime lastAccessTime() {
+		if (summary != null) {
+			return FileTime.from(this.summary.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		} else {
+			return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		}
 		// bos只有一个最后修改时间
-		return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
 	}
 
 	@Override

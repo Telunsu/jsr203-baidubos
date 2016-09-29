@@ -516,19 +516,10 @@ public class TestOssFileSystemProvider {
 		OutputStream os = null;
 		try {
 			String ossFileName = "dataFile.txt"	;
-<<<<<<< HEAD
-			client.deleteObject(OssConfig.getBucket(), ossFileName);
-			File file = new File("/home/novelbio/data/dataFile.txt");
-=======
 			client.deleteObject(PathDetailOs.getBucket(), ossFileName);
 			File file = new File("/home/novelbio/data/arabidopsis_rna_2.fq");
->>>>>>> branch 'master' of https://github.com/NovelBioCloud/jsr203-baidubos.git
 			is = Files.newInputStream(file.toPath());
-<<<<<<< HEAD
-			Path path = new OssFileSystemProvider().getPath(new URI("http://" + OssConfig.getBucket() + "." + OssConfig.getEndpoint() + "/" + ossFileName));
-=======
 			Path path = new OssFileSystemProvider().getPath(new URI("http://" + PathDetailOs.getBucket() + "." + PathDetailOs.getEndpoint() + "/" + ossFileName));
->>>>>>> branch 'master' of https://github.com/NovelBioCloud/jsr203-baidubos.git
 			os = Files.newOutputStream(path, StandardOpenOption.CREATE);
 			byte[] buffer = new byte[128];
 			int len;
@@ -536,11 +527,7 @@ public class TestOssFileSystemProvider {
 				os.write(buffer, 0, len);
 			}
 			
-<<<<<<< HEAD
-			Assert.assertTrue(client.doesObjectExist(OssConfig.getBucket(), ossFileName));
-=======
 			Assert.assertTrue(client.doesObjectExist(PathDetailOs.getBucket(), ossFileName));
->>>>>>> branch 'master' of https://github.com/NovelBioCloud/jsr203-baidubos.git
 		} catch (Exception e) {
 			if (e instanceof RuntimeException) {
 				System.out.println(e.getMessage());
