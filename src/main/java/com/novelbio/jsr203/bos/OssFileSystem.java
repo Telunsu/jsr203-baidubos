@@ -294,28 +294,29 @@ public class OssFileSystem extends FileSystem {
 		}
 		
 		if (client.doesObjectExist(PathDetailOs.getBucket(), path)) {
-			throw new RuntimeException("path is existed.path=" + path);
+			logger.warn("path is existed.path=" + path);
+			return;
 		}
 		
 		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
 	}
 
-	/**
-	 * 输入类似 bos:/novelbio/myfile/test.txt 类型 novelbio是bucket myfile/test.txt 是
-	 * key
-	 * 
-	 * @param path
-	 * @return
-	 */
-	private String[] getBucket2KeyWithBucket(String path) {
-		path = PathDetailOs.removeSplashHead(path, false);
-		String uploadPath = path.replaceFirst(OssFileSystemProvider.SCHEME + ":", "");
-		uploadPath = PathDetailOs.removeSplashHead(uploadPath, false);
-		String[] bucketName = uploadPath.split("/+");
-		String bucket = bucketName[0];
-		String key = uploadPath.replaceFirst(bucket, "");
-		return new String[] { bucket, key };
-	}
+//	/**
+//	 * 输入类似 bos:/novelbio/myfile/test.txt 类型 novelbio是bucket myfile/test.txt 是
+//	 * key
+//	 * 
+//	 * @param path
+//	 * @return
+//	 */
+//	private String[] getBucket2KeyWithBucket(String path) {
+//		path = PathDetailOs.removeSplashHead(path, false);
+//		String uploadPath = path.replaceFirst(OssFileSystemProvider.SCHEME + ":", "");
+//		uploadPath = PathDetailOs.removeSplashHead(uploadPath, false);
+//		String[] bucketName = uploadPath.split("/+");
+//		String bucket = bucketName[0];
+//		String key = uploadPath.replaceFirst(bucket, "");
+//		return new String[] { bucket, key };
+//	}
 
 //	/**
 //	 * 输入类似 bos:/myfile/test.txt 类型 novelbio是bucket myfile/test.txt 是 key
@@ -369,7 +370,6 @@ public class OssFileSystem extends FileSystem {
 
 	public void checkAccess(OssPath bosPath, AccessMode[] modes) {
 		// TODO Auto-generated method stub
-		
 	}
 
 	public <V extends FileAttributeView> V getView(OssPath bosPath, Class<V> type) {
