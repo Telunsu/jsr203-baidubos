@@ -41,13 +41,23 @@ public class OssFileAttributes implements BasicFileAttributes {
 		this.ossObject = ossObject;
 		
 		String path = ossObject.getKey();
+		OSSObjectSummary likedSummary = null;
 		ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path);
 		for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
 			if (summary.getKey().equals(path) || summary.getKey().equals(path + "/")) {
 				this.summary = summary;
 				break;
+			} else if(summary.getKey().startsWith(path)) {
+				likedSummary = summary;
 			}
 		}
+		
+		if (summary == null && likedSummary != null) {
+			summary = new OSSObjectSummary();
+			summary.setKey(path);
+			summary.setLastModified(likedSummary.getLastModified());
+		}
+		
 	}
 
 	@Override
