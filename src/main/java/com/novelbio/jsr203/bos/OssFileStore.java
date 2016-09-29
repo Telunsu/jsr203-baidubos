@@ -15,7 +15,7 @@ public class OssFileStore extends FileStore {
 	
 	@Override
 	public String name() {
-		 return OssConfig.getEndpoint();
+		 return PathDetailOs.getEndpoint();
 	}
 
 	@Override

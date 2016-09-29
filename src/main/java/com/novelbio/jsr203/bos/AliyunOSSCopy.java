@@ -24,7 +24,7 @@ public class AliyunOSSCopy implements Callable<PartETag> {
 	private static Logger logger = LoggerFactory.getLogger(AliyunOSSCopy.class);
 
 	protected static OSSClient client = OssInitiator.getClient();
-	private static String bucketName = OssConfig.getBucket();
+	private static String bucketName = PathDetailOs.getBucket();
 
 	private String sourceKey;
 	private String targetKey;

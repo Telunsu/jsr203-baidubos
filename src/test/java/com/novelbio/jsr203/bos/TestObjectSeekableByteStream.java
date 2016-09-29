@@ -23,7 +23,7 @@ public class TestObjectSeekableByteStream {
 
 	@Test
 	public void testObjectSeekableByteStream() {
-		objectSeekableByteStream = new ObjectSeekableByteStream(OssConfig.getBucket(), Key);
+		objectSeekableByteStream = new ObjectSeekableByteStream(PathDetailOs.getBucket(), Key);
 		assertNotNull(objectSeekableByteStream);
 	}
 
@@ -31,7 +31,7 @@ public class TestObjectSeekableByteStream {
 	public void testRead() {
 		String content = null;
 		try {
-			objectSeekableByteStream = new ObjectSeekableByteStream(OssConfig.getBucket(), Key);
+			objectSeekableByteStream = new ObjectSeekableByteStream(PathDetailOs.getBucket(), Key);
 			ByteBuffer byteBuffer = ByteBuffer.allocate(9);
 			int i = objectSeekableByteStream.read(byteBuffer);
 			Assert.assertTrue(i > 0);
@@ -43,7 +43,7 @@ public class TestObjectSeekableByteStream {
 
 		try {
 			OSSClient client = OssInitiator.getClient();
-			GetObjectRequest getObjectRequest = new GetObjectRequest(OssConfig.getBucket(), Key);
+			GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetailOs.getBucket(), Key);
 			// 获取文件部分内容.如果指定值超出文件大小会抛异常.
 			getObjectRequest.setRange(0, 8);
 			OSSObject object = client.getObject(getObjectRequest);
@@ -60,7 +60,7 @@ public class TestObjectSeekableByteStream {
 	
 	 @Test
 	 public void testPositionLong() {
-		 this.objectSeekableByteStream = new ObjectSeekableByteStream(OssConfig.getBucket(), Key);
+		 this.objectSeekableByteStream = new ObjectSeekableByteStream(PathDetailOs.getBucket(), Key);
 		 try {
 			 ObjectSeekableByteStream objectSeekableByteStream = (ObjectSeekableByteStream) this.objectSeekableByteStream.position(10);
 			 assertNotNull(objectSeekableByteStream);
@@ -73,7 +73,7 @@ public class TestObjectSeekableByteStream {
 	 @Test
 	public void testSize() {
 		try {
-			objectSeekableByteStream = new ObjectSeekableByteStream(OssConfig.getBucket(), Key);
+			objectSeekableByteStream = new ObjectSeekableByteStream(PathDetailOs.getBucket(), Key);
 			Assert.assertTrue(objectSeekableByteStream.size() > 0);
 		} catch (IOException e) {
 			e.printStackTrace();

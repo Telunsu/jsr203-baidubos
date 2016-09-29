@@ -22,7 +22,7 @@ import com.aliyun.oss.model.PutObjectResult;
 
 public class TestOssInitiator {
 
-	String bucket = OssConfig.getBucket();
+	String bucket = PathDetailOs.getBucket();
 	String basePath = "fansTest/";
 	OSSClient client;
 
