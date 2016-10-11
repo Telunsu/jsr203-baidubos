@@ -61,7 +61,7 @@ public class OssFileSystemProvider extends FileSystemProvider {
 	
 	@Override
 	public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
-		return new OssFileSystem(this);
+		return new OssFileSystem(this, uri);
 	}
 
 	@Override

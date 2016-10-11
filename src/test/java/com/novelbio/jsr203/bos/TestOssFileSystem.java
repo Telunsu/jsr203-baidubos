@@ -2,6 +2,7 @@ package com.novelbio.jsr203.bos;
 
 import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.junit.Assert;
 import org.junit.Rule;
@@ -21,22 +22,22 @@ public class TestOssFileSystem {
 	public ExpectedException thrown = ExpectedException.none();
 	
 //	@Test
-	public void testCreateDirectory() {
-		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider());
-		ossFileSystem.createDirectory("bos:/test/dir", null);
+	public void testCreateDirectory() throws URISyntaxException {
+		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider(), new URI(""));
+		ossFileSystem.createDirectory("oss:/test/dir", null);
 		OSSObject obj = client.getObject("novelbio", "test/dir/.exist");
 		Assert.assertEquals("test/dir/.exist", obj.getKey());
 	}
 	
 	@Test
-	public void testDeleteFile() {
+	public void testDeleteFile() throws URISyntaxException {
 		ObjectListing objectListing = client.listObjects(PathDetailOs.getBucket());
 		objectListing.getObjectSummaries().forEach(objsum -> System.out.println(objsum.getKey()));
 		
 		client.putObject("novelbio", "test/dir/exist", new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/small.txt"));
 		client.putObject("novelbio", "test/dir/exist2", new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/big.bam"));
 		OSSException exception = null;
-		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider());
+		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider(), new URI(""));
 		String file = "small.txt";
 		ossFileSystem.deleteFile(new File("http://" + PathDetailOs.getBucket() + "." + PathDetailOs.getEndpoint() + "/" + file).toPath());
 		try {

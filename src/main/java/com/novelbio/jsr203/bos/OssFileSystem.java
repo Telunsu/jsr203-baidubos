@@ -53,17 +53,15 @@ import net.sf.json.JSON;
 public class OssFileSystem extends FileSystem {
 	private static final Logger logger = LoggerFactory.getLogger(OssFileSystem.class);
 	
-	private static final String DIR_SUFFIX = ".exist";
-
 	private boolean readOnly;
 	private volatile boolean isOpen = true;
+	private String host;
 	FileSystemProvider fileSystemProvider;
-//	FileSystem fileSystem;
 	OSSClient client = OssInitiator.getClient();
 
-	public OssFileSystem(FileSystemProvider fileSystemProvider) {
+	public OssFileSystem(FileSystemProvider fileSystemProvider, URI uri) {
 		this.fileSystemProvider = fileSystemProvider;
-//		this.fileSystem = new BosFileSystem(fileSystemProvider);
+		this.host = uri.getHost();
 	}
 	
 	@Override
@@ -145,9 +143,9 @@ public class OssFileSystem extends FileSystem {
 			path = sb.toString();
 		}
 		
-		while (path.startsWith("/")) {
-			path = path.substring(1);
-		}
+//		while (path.startsWith("/")) {
+//			path = path.substring(1);
+//		}
 		return new OssPath(this, path.getBytes());
 	}
 
@@ -451,5 +449,8 @@ public class OssFileSystem extends FileSystem {
 		}
 	}
 
+	public String getHost() {
+		return host;
+	}
 
 }
