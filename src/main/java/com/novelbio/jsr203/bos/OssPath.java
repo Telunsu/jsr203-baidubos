@@ -476,7 +476,8 @@ public class OssPath implements Path {
 	@Override
 	public String toString() {
 		if (isAbsolute()) {
-			return new String(OssFileSystemProvider.SCHEME + new String(getResolvedPath()));
+//			return new String(OssFileSystemProvider.SCHEME + new String(getResolvedPath()));
+			return new String(getResolvedPath());
 		} else {
 			return new String(this.path);
 		}

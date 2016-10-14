@@ -18,30 +18,28 @@ import com.aliyun.oss.model.ObjectListing;
 public class TestOssFileSystem {
 	
 	OSSClient client = OssInitiator.getClient();
-	@Rule //暂时不清楚这个annotation有什么用，待查证
-	public ExpectedException thrown = ExpectedException.none();
 	
-//	@Test
+	@Test
 	public void testCreateDirectory() throws URISyntaxException {
 		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider(), new URI(""));
-		ossFileSystem.createDirectory("oss:/test/dir", null);
-		OSSObject obj = client.getObject("novelbio", "test/dir/.exist");
-		Assert.assertEquals("test/dir/.exist", obj.getKey());
+		ossFileSystem.createDirectory("test/dir/", null);
+		OSSObject obj = client.getObject(PathDetailOs.getBucket(), "test/dir/");
+		Assert.assertEquals("test/dir/", obj.getKey());
+		client.deleteObject(PathDetailOs.getBucket(), "test/dir/");
 	}
 	
 	@Test
 	public void testDeleteFile() throws URISyntaxException {
-		ObjectListing objectListing = client.listObjects(PathDetailOs.getBucket());
-		objectListing.getObjectSummaries().forEach(objsum -> System.out.println(objsum.getKey()));
 		
-		client.putObject("novelbio", "test/dir/exist", new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/small.txt"));
-		client.putObject("novelbio", "test/dir/exist2", new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/big.bam"));
-		OSSException exception = null;
-		OssFileSystem ossFileSystem = new OssFileSystem(new OssFileSystemProvider(), new URI(""));
 		String file = "small.txt";
-		ossFileSystem.deleteFile(new File("http://" + PathDetailOs.getBucket() + "." + PathDetailOs.getEndpoint() + "/" + file).toPath());
+		client.putObject(PathDetailOs.getBucket(), file, new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/small.txt"));
+		OSSException exception = null;
+		OssFileSystemProvider ossFileSystemProvider = new OssFileSystemProvider();
+		OssFileSystem ossFileSystem = new OssFileSystem(ossFileSystemProvider, new URI(""));
+		ossFileSystem.deleteFile(ossFileSystemProvider.getPath(new URI("oss://" + PathDetailOs.getBucket() + "/" + file)));
+		Assert.assertFalse(client.doesObjectExist(PathDetailOs.getBucket(), file));
 		try {
-			OSSObject obj = client.getObject("novelbio", "test/dir/.exist");
+			OSSObject obj = client.getObject(PathDetailOs.getBucket(), "test/dir/.exist");
 		} catch (Exception e) {
 			exception = (OSSException) e;
 		}

@@ -143,9 +143,9 @@ public class OssFileSystem extends FileSystem {
 			path = sb.toString();
 		}
 		
-//		while (path.startsWith("/")) {
-//			path = path.substring(1);
-//		}
+		while (path.startsWith("/")) {
+			path = path.substring(1);
+		}
 		return new OssPath(this, path.getBytes());
 	}
 
