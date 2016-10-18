@@ -15,6 +15,7 @@ public class PathDetailOs {
 	private static String REGION_ID = null;
 	private static String STS_API_VERSION = null;
 	private static String ROLE_ARN = null;
+	private static String CLIENT_BUCKET = null;
 	
 	static {
 		initial();
@@ -27,6 +28,7 @@ public class PathDetailOs {
 		REGION_ID = properties.getProperty("CLIENT_REGION_ID");
 		STS_API_VERSION = properties.getProperty("CLIENT_STS_API_VERSION");
 		ROLE_ARN = properties.getProperty("CLIENT_ROLE_ARN");
+		CLIENT_BUCKET = properties.getProperty("CLIENT_BUCKET");
 	}
 	private static void initial() {
 		String configPath = "configoss.properties";
@@ -103,6 +105,10 @@ public class PathDetailOs {
 		return ENDPOINT;
 	}
 	
+	/** OSS上的命名空间 */
+	public static String getClientBucket() {
+		return CLIENT_BUCKET;
+	}
 
 	/** BOS上的命名空间 */
 	public static String getBucket() {
