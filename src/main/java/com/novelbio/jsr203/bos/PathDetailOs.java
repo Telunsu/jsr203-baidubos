@@ -2,6 +2,7 @@ package com.novelbio.jsr203.bos;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Properties;
 
 public class PathDetailOs {
@@ -155,14 +156,16 @@ public class PathDetailOs {
 		return fileNameThis;
 	}
 	
-	public static String changeOsToLocal(String osPath) {
-		String osHead = getOsSymbol() + ":";
-		if (!osPath.startsWith(osHead) && !osPath.startsWith("/" + osHead)) {
-			return osPath;
+	public static String changeOsToLocal(String ossPath) {
+		String osHead = OssFileSystemProvider.SCHEME + "://";
+		if (!ossPath.startsWith(osHead)) {
+			return ossPath;
 		}
-		osPath = osPath.replace(osHead, "/");
-		osPath = getOsMountPathWithSep() + removeSplashHead(osPath, false);
-		return osPath;
+		try {
+			return new OssFileSystemProvider().getPath(new URI(ossPath)).toString();
+		} catch (Exception e) {
+			throw new RuntimeException("changeOsToLocal error.ossPath=" + ossPath, e);
+		}
 	}
 	
 }
