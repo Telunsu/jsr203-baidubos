@@ -168,8 +168,6 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		 */
 		AliyunOSSUpload.completeMultipartUpload(fileName, lsPartETags, uploadId);
 		
-		// 返回上传文件的URL地址
-		String path = PathDetailOs.getEndpoint() + "/" + bucketName + "/" + fileName;
 	}
 	
 	@Override
