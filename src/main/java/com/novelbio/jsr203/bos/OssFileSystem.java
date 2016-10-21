@@ -214,7 +214,7 @@ public class OssFileSystem extends FileSystem {
 			path = path + "/";
 		}
 		listObjectsRequest.setPrefix(path);
-		listObjectsRequest.setMaxKeys(10000);
+		listObjectsRequest.setMaxKeys(1000);
 		ObjectListing objectListing = OssInitiator.getClient().listObjects(listObjectsRequest);
 
 		if (objectListing.getCommonPrefixes() != null) {
