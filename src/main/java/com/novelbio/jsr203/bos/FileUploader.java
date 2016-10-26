@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.model.PartETag;
+import com.aliyun.oss.model.UploadFileRequest;
 
 public class FileUploader {
 
@@ -24,8 +25,21 @@ public class FileUploader {
 	
 	public static void main(String[] args) {
 		long time1 = System.currentTimeMillis();
+		String key = "work-jar/novelbio.tar.gz";
+//		client.abortMultipartUpload(new AbortMultipartUploadRequest(PathDetailOs.getBucket(), key, "36E86DA87035474298623AAB0D63BA14"));
+		client.deleteObject(PathDetailOs.getBucket(), key);
+		System.out.println(client.doesObjectExist(PathDetailOs.getBucket(), key));
+		UploadFileRequest request = new UploadFileRequest(PathDetailOs.getBucket(), key);
+		request.setUploadFile("/home/novelbio/deploy/aliyun/161025/worker.tar.gz");
+		try {
+			client.uploadFile(request);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
 //		fileUpload(new File("/home/novelbio/下载/rawdata/BG.txt"));
-		fileUpload(new File("/home/novelbio/下载/rawdata/arabidopsis_rna_1.fq.gz"));
+//		fileUpload(new File("/home/novelbio/deploy/aliyun/161021/worker.tar.gz"), key);
 
 //		fileUpload(new File("/home/novelbio/下载/ubuntu-mate-16.04.1-desktop-amd64.iso"));
 		long time2 = System.currentTimeMillis();
@@ -33,14 +47,13 @@ public class FileUploader {
 	}
 
 
-	public static void fileUpload(File file) {
+	public static void fileUpload(File file, String key) {
 		System.out.println("upload file " + file.getName());
 		
 		// 创建一个可重用固定线程数的线程池。若同一时间线程数大于10，则多余线程会放入队列中依次执行
-		ExecutorService executorService = Executors.newFixedThreadPool(10);
+		ExecutorService executorService = Executors.newFixedThreadPool(3);
 		CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
 		
-		String key = file.getName(); // 获取上传文件的名称，作为在OSS上的文件名
 		try {
 			String uploadId = AliyunOSSUpload.claimUploadId(PathDetailOs.getBucket(), key);
 			// 设置分块大小

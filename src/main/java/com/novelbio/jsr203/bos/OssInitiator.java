@@ -25,7 +25,6 @@ public class OssInitiator {
 			// ossHost不为空,说明是运行在批量计算的VM中.这时取环境变量中的参数.
 			endpoint = ossHost;
 		}
-		System.out.println("endpoint = " + endpoint);
     	client = new OSSClient(endpoint, ACCESS_KEY_ID, SECRET_ACCESS_KEY);
 	}
 	

@@ -348,8 +348,8 @@ public class TestOssFileSystemProvider {
 			while ((len = is.read(buffer)) > 0) {
 				os.write(buffer, 0, len);
 			}
-			closeStream(is);
-			closeStream(os);
+			close(is);
+			close(os);
 			
 			Assert.assertTrue(client.doesObjectExist(PathDetailOs.getBucket(), ossFileName));
 		} catch (Exception e) {
@@ -360,15 +360,6 @@ public class TestOssFileSystemProvider {
 		}
 	}
 
-	private void closeStream(Closeable close) {
-		if (close != null) {
-			try {
-				close.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
 
 	public static void close(Closeable stream){
 		try {

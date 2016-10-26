@@ -74,9 +74,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			uploadPart(true);
 		}
 		
-		if (partNum > 0) {
-			finish();
-		}
+		finish();
 		
 		if (executorService != null) {
 			executorService.shutdown();
@@ -143,21 +141,27 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		}
 	}
 	
-	private void finish() {
+	private synchronized void finish() {
+		if (partNum <= 0) {
+			return;
+		}
 		List<PartETag> lsPartETags = new ArrayList<>();
-		for (int i = 0; i < partNum; i++) {
+		logger.info("fileName={},partNum={}", fileName, partNum);
+		int parts = partNum;
+		partNum = 0;
+		for (int i = 0; i < parts; i++) {
 			try {
 				PartETag partETag = completionService.take().get();
-				logger.info("线程{}运行结束", i);
+				logger.info("thread{}finished", i);
 				lsPartETags.add(partETag);
 			} catch (InterruptedException | ExecutionException e) {
-				System.err.printf("并发处理异常：%s\n", e.getMessage());
+				System.err.printf("error：%s\n", e.getMessage());
 				logger.error("execute executeUpload error.", e);
 				// XXX 一旦并发异常，程序就卡死在这里，需要处理
 			}
 		}
 
-		logger.info("将要上传的文件名  " + fileName + "\n");
+		logger.info("upload file name= " + fileName + "\n");
 		/*
 		 * 列出文件所有的分块清单并打印到日志中，该方法仅仅作为输出使用
 		AliyunOSSUpload.listAllParts(uploadId, fileName);

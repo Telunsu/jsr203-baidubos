@@ -3,11 +3,17 @@ package com.novelbio.jsr203.bos;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.assertj.core.api.SoftAssertions;
 import org.junit.AfterClass;
@@ -97,6 +103,43 @@ public class TestObjectSeekableByteStream {
 			e.printStackTrace();
 		}
 	}
+	 
+	 @Test
+	 public void testWrite() {
+		 InputStream is = null;
+			OutputStream os = null;
+			try {
+				String ossFileName = "dataFile.txt"	;
+				client.deleteObject(PathDetailOs.getBucket(), ossFileName);
+				File file = new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/big.bam");
+				is = Files.newInputStream(file.toPath());
+				Path path = new OssFileSystemProvider().getPath(new URI("oss://" + PathDetailOs.getBucket() + "/" + ossFileName));
+				os = Files.newOutputStream(path, StandardOpenOption.CREATE);
+				byte[] buffer = new byte[128];
+				int len;
+				while ((len = is.read(buffer)) > 0) {
+					os.write(buffer, 0, len);
+				}
+				close(is);
+				close(os);
+				
+				Assert.assertTrue(client.doesObjectExist(PathDetailOs.getBucket(), ossFileName));
+			} catch (Exception e) {
+				if (e instanceof RuntimeException) {
+					System.out.println(e.getMessage());
+				}
+			} finally {
+			}
+	 }
+	 
+	 public static void close(Closeable stream){
+			try {
+				if (stream != null) {
+					stream.close();
+				}
+			} catch (Exception e) {
+			}
+		}
 	 
 	 @AfterClass
 	 public static void after() {

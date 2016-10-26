@@ -462,7 +462,7 @@ public class OssPath implements Path {
 			if (ossFileSystem.getHost() != null && !"".equals(ossFileSystem.getHost())) {
 				return new URI(OssFileSystemProvider.SCHEME + "://" + ossFileSystem.getHost() + new String(toAbsolutePath().path));
 			} else {
-				return new URI(OssFileSystemProvider.SCHEME + ":" + new String(toAbsolutePath().path));
+				return new URI(OssFileSystemProvider.SCHEME + "://" + PathDetailOs.getBucket() + new String(toAbsolutePath().path));
 			}
 		} catch (URISyntaxException e) {
 			throw new AssertionError(e);

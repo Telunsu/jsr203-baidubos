@@ -69,6 +69,7 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 	public PartETag call() throws Exception {
 		InputStream instream = null;
 		try {
+			logger.info("before upload file {}, partNumber={}", key, partNumber);
 			// 获取文件流
 			instream = new FileInputStream(localFile);
 			// 跳到每个分块的开头
@@ -84,7 +85,7 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 			uploadPartRequest.setPartNumber(partNumber);
 
 			UploadPartResult uploadPartResult = client.uploadPart(uploadPartRequest);
-			logger.info("Part#" + partNumber + " done\n");
+			logger.info("after upload file {}, partNumber={}", key, partNumber);
 			if (isTempFile && localFile.length() == partSize) {
 				localFile.delete();
 			}
