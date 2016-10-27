@@ -87,11 +87,11 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		try {
 			int dstPos = dst.position();
 			GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
-			getObjectRequest.setRange(position, position + dst.capacity());
+			long start = position, end = position + dst.capacity();
+			getObjectRequest.setRange(start, end);
 			OSSObject object = client.getObject(getObjectRequest);
 			InputStream is = object.getObjectContent();
 			num = is.read(dst.array(), dst.position(), dst.limit());
-			dst.position(dst.limit());
 			position = position + dst.limit() - dstPos;
 			is.close();
 		} catch (Exception e) {
@@ -181,10 +181,10 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public SeekableByteChannel position(long newPosition) throws IOException {
-		ObjectSeekableByteStream seekableByteStream = new ObjectSeekableByteStream(bucketName, fileName);
-		seekableByteStream.client = client;
-		seekableByteStream.position = newPosition;
-		return seekableByteStream;
+//		ObjectSeekableByteStream seekableByteStream = new ObjectSeekableByteStream(bucketName, fileName);
+//		this.client = client;
+		this.position = newPosition;
+		return this;
 	}
 
 	@Override

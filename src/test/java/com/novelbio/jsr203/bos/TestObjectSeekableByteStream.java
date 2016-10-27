@@ -32,6 +32,7 @@ public class TestObjectSeekableByteStream {
 	static String key = "arabidopsis_rna_2.fq";
 	static OSSClient client = OssInitiator.getClient();
 	
+	
 	@BeforeClass
 	public static void before() {
 		client.putObject(PathDetailOs.getBucket(), key, new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/big.bam"));
