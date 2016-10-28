@@ -9,7 +9,7 @@ public class TestPathDetalOs {
 	public void testChangeOsToLocal() {
 		String path = PathDetailOs.getOsSymbol() + "://bucket/mypath/file";
 		String local = PathDetailOs.changeOsToLocal(path);
-		Assert.assertEquals(PathDetailOs.getOsMountPathWithSep() + "bucket/mypath/file", local);
+		Assert.assertEquals(PathDetailOs.getOsMountPathWithSep() + "mypath/file", local);
 		
 		path = "/home/novelbio/test";
 		local = PathDetailOs.changeOsToLocal(path);
