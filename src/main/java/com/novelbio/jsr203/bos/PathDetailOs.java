@@ -52,6 +52,41 @@ public class PathDetailOs {
 	
 	}
 	
+
+	public static String getRegionId() {
+		return properties.getProperty("regionId");
+	}
+
+	/**
+	 * 获取阿里云镜像id
+	 * 
+	 * @return
+	 */
+	public static String getImageId() {
+		return properties.getProperty("imageId");
+	}
+	
+	/** 
+	 * 阿里云实例名称
+	 * @return
+	 */
+	public static String getInstanceType() {
+		return properties.getProperty("instanceType");
+	}
+
+	public static int getVmCounts() {
+		try {
+			return Integer.valueOf(properties.getProperty("vmCounts"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 5;
+	}
+	
+	public static String getDockerRegistry() {
+		return properties.getProperty("dockerRegistry");
+	}
+	
 	/**
 	 * 获取对象存储服务供应类型[ACS_OSS,BCE_BOS]，阿里云还是百度云
 	 * 
