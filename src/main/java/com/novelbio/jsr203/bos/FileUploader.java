@@ -13,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.model.DownloadFileRequest;
+import com.aliyun.oss.model.OSSObject;
+import com.aliyun.oss.model.ObjectListing;
 import com.aliyun.oss.model.PartETag;
 import com.aliyun.oss.model.UploadFileRequest;
 
@@ -23,14 +26,36 @@ public class FileUploader {
 	// 创建OSSClient实例
 	protected static OSSClient client = OssInitiator.getClient();
 	
+	public static void deleteKey() {
+		ObjectListing objectListing = client.listObjects(PathDetailOs.getBucket(), "log-count/");
+		objectListing.getObjectSummaries().forEach(ossSummary -> {
+			client.deleteObject(PathDetailOs.getBucket(), ossSummary.getKey());
+			System.out.println("delete file=" + ossSummary.getKey());
+		});
+	}
+	
+	public static void downloadKey() {
+		try {
+			String key = "log-count/outputfile.txt";
+			DownloadFileRequest downloadFileRequest = new DownloadFileRequest(PathDetailOs.getBucket(), key);
+			downloadFileRequest.setDownloadFile("/home/novelbio/tmp/中文测试/output.txt");
+			client.downloadFile(downloadFileRequest);
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public static void main(String[] args) {
-		long time1 = System.currentTimeMillis();
-		String key = "work-jar/novelbio.tar.gz";
-//		client.abortMultipartUpload(new AbortMultipartUploadRequest(PathDetailOs.getBucket(), key, "36E86DA87035474298623AAB0D63BA14"));
+		
+		downloadKey();
+//		uploadWorkJar();
+	}
+
+	public static void uploadWorkJar() {
+		String key = "work-jar/worker.tar.gz";
 		client.deleteObject(PathDetailOs.getBucket(), key);
-		System.out.println(client.doesObjectExist(PathDetailOs.getBucket(), key));
 		UploadFileRequest request = new UploadFileRequest(PathDetailOs.getBucket(), key);
-		request.setUploadFile("/home/novelbio/deploy/aliyun/161025/worker.tar.gz");
+		request.setUploadFile("/home/novelbio/tmp/java-log-count/target/worker.tar.gz");
 		try {
 			client.uploadFile(request);
 		} catch (Exception e) {
@@ -38,14 +63,8 @@ public class FileUploader {
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
-//		fileUpload(new File("/home/novelbio/下载/rawdata/BG.txt"));
-//		fileUpload(new File("/home/novelbio/deploy/aliyun/161021/worker.tar.gz"), key);
-
-//		fileUpload(new File("/home/novelbio/下载/ubuntu-mate-16.04.1-desktop-amd64.iso"));
-		long time2 = System.currentTimeMillis();
-		System.out.println("upload file time = " + (time2 - time1));
 	}
-
+	
 
 	public static void fileUpload(File file, String key) {
 		System.out.println("upload file " + file.getName());
