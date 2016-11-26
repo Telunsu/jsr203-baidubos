@@ -36,7 +36,7 @@ public class TestOssFileSystem {
 		OSSException exception = null;
 		OssFileSystemProvider ossFileSystemProvider = new OssFileSystemProvider();
 		OssFileSystem ossFileSystem = new OssFileSystem(ossFileSystemProvider, new URI(""));
-		ossFileSystem.deleteFile(ossFileSystemProvider.getPath(new URI("oss://" + PathDetailOs.getBucket() + "/" + file)));
+		ossFileSystem.deleteFile((OssPath) ossFileSystemProvider.getPath(new URI("oss://" + PathDetailOs.getBucket() + "/" + file)));
 		Assert.assertFalse(client.doesObjectExist(PathDetailOs.getBucket(), file));
 		try {
 			OSSObject obj = client.getObject(PathDetailOs.getBucket(), "test/dir/.exist");

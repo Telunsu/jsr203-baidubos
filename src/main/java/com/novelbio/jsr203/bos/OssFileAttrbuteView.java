@@ -37,7 +37,7 @@ public class OssFileAttrbuteView implements BasicFileAttributeView {
 //		}
 //		ObjectMetadata ObjectMetadata = path.getFileSystem().getBos().getObjectMetadata(getObjMetadata);
 		
-		OSSObject ossObject = OssInitiator.getClient().getObject(PathDetailOs.getBucket(), path.toString());
+		OSSObject ossObject = OssInitiator.getClient().getObject(PathDetailOs.getBucket(), path.getInternalPath());
 		
 		return new OssFileAttributes(ossObject);
 	}

@@ -197,7 +197,7 @@ public class PathDetailOs {
 			return ossPath;
 		}
 		try {
-			return  getOsMountPathWithSep() + new OssFileSystemProvider().getPath(new URI(ossPath)).toString();
+			return  getOsMountPathWithSep() + ((OssPath)new OssFileSystemProvider().getPath(new URI(ossPath))).getInternalPath();
 		} catch (Exception e) {
 			throw new RuntimeException("changeOsToLocal error.ossPath=" + ossPath, e);
 		}

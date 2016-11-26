@@ -475,12 +475,13 @@ public class OssPath implements Path {
 
 	@Override
 	public String toString() {
-		if (isAbsolute()) {
-//			return new String(OssFileSystemProvider.SCHEME + new String(getResolvedPath()));
-			return new String(getResolvedPath());
-		} else {
-			return new String(this.path);
-		}
+//		if (isAbsolute()) {
+////			return new String(OssFileSystemProvider.SCHEME + new String(getResolvedPath()));
+//			return new String(getResolvedPath());
+//		} else {
+//			return new String(this.path);
+//		}
+		return toUri().toString();
 	}
 
 	DirectoryStream<Path> newDirectoryStream(Filter<? super Path> filter) throws IOException {
@@ -630,7 +631,7 @@ public class OssPath implements Path {
 
 
 	public InputStream newInputStream(Path path, OpenOption... options) {
-		return this.ossFileSystem.newInputStream(path, options);
+		return this.ossFileSystem.newInputStream((OssPath) path, options);
 	}
 
 	public <A extends BasicFileAttributes> A readAttributes(Class<A> type, LinkOption[] options) {
@@ -640,5 +641,13 @@ public class OssPath implements Path {
 	public void checkAccess(AccessMode... modes) throws IOException {
 		this.ossFileSystem.readAttributes(this, modes);
 	}
-
+	
+	public String getInternalPath() {
+		if (internalPath != null && internalPath.startsWith("/")) {
+			return internalPath.substring(1);
+		} else {
+			return internalPath;
+		}
+		
+	}
 }

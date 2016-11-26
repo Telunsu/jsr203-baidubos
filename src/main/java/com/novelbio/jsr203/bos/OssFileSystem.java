@@ -209,7 +209,7 @@ public class OssFileSystem extends FileSystem {
 		// "/" 为文件夹的分隔符
 		listObjectsRequest.setDelimiter("/");
 		// 列出ossPath目录下的内容
-		String path = ossPath.toString();
+		String path = ossPath.getInternalPath();
 		if (!path.endsWith("/")) {
 			path = path + "/";
 		}
@@ -274,12 +274,12 @@ public class OssFileSystem extends FileSystem {
 //	}
 
 	/** 只能删除文件，不能删除文件夹 */
-	protected void deleteFile(Path path) {
+	protected void deleteFile(OssPath path) {
 //		String[] bucket2Key = getBucket2Key(absolutePathStr);
 		try {
 			// TODO 删除文件,需判断是不是一个文件,不能把文件夹删除了.
-			if (client.doesObjectExist(PathDetailOs.getBucket(), path.toString())) {
-				client.deleteObject(PathDetailOs.getBucket(), path.toString());
+			if (client.doesObjectExist(PathDetailOs.getBucket(), path.getInternalPath())) {
+				client.deleteObject(PathDetailOs.getBucket(), path.getInternalPath());
 			}
 		} catch (OSSException|ClientException e) {
 			throw e;
@@ -375,8 +375,8 @@ public class OssFileSystem extends FileSystem {
 		return null;
 	}
 
-	public InputStream newInputStream(Path path, OpenOption[] options) {
-		GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetailOs.getBucket(), path.toString());
+	public InputStream newInputStream(OssPath path, OpenOption[] options) {
+		GetObjectRequest getObjectRequest = new GetObjectRequest(PathDetailOs.getBucket(), path.getInternalPath());
 		OSSObject bosObject = client.getObject(getObjectRequest);
 		return bosObject.getObjectContent();
 	}
@@ -386,20 +386,20 @@ public class OssFileSystem extends FileSystem {
 	}
 
 	public void copy(OssPath source, OssPath target) {
-		if (!client.doesObjectExist(PathDetailOs.getBucket(), source.toString())) {
+		if (!client.doesObjectExist(PathDetailOs.getBucket(), source.getInternalPath())) {
 			throw new RuntimeException("source file not exist! source=" + source);
 		}
-		if (client.doesObjectExist(PathDetailOs.getBucket(), target.toString())) {
+		if (client.doesObjectExist(PathDetailOs.getBucket(), target.getInternalPath())) {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
 		
-		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.toString());
+		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.getInternalPath());
 		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
-			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.toString(), PathDetailOs.getBucket(), target.toString());
+			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.getInternalPath(), PathDetailOs.getBucket(), target.getInternalPath());
 			client.copyObject(copyObjectRequest);
 		} else {
 			//小文件直接拷贝,大文件需分块拷贝.
-			FileCopyer.fileCopy(source.toString(), target.toString());
+			FileCopyer.fileCopy(source.getInternalPath(), target.getInternalPath());
 		}
 	}
 
@@ -409,38 +409,38 @@ public class OssFileSystem extends FileSystem {
 	 * @param target
 	 */
 	public void move(OssPath source, OssPath target) {
-		if (!client.doesObjectExist(PathDetailOs.getBucket(), source.toString())) {
+		if (!client.doesObjectExist(PathDetailOs.getBucket(), source.getInternalPath())) {
 			throw new RuntimeException("source file not exist! source=" + source);
 		}
-		if (client.doesObjectExist(PathDetailOs.getBucket(), target.toString())) {
+		if (client.doesObjectExist(PathDetailOs.getBucket(), target.getInternalPath())) {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
 		
-		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.toString());
+		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.getInternalPath());
 		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
-			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.toString(), PathDetailOs.getBucket(), target.toString());
+			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.getInternalPath(), PathDetailOs.getBucket(), target.getInternalPath());
 			client.copyObject(copyObjectRequest);
 		} else {
-			FileCopyer.fileCopy(source.toString(), target.toString());
+			FileCopyer.fileCopy(source.getInternalPath(), target.getInternalPath());
 		}
 		
-		client.deleteObject(PathDetailOs.getBucket(), source.toString());
+		client.deleteObject(PathDetailOs.getBucket(), source.getInternalPath());
 	}
 
 	public <A extends BasicFileAttributes> A readAttributes(OssPath ossPath, Class<A> type, LinkOption[] options) {
 		OSSObject ossObject = null;
-		if (client.doesObjectExist(PathDetailOs.getBucket(), ossPath.toString())) {
-			ossObject = client.getObject(PathDetailOs.getBucket(), ossPath.toString());
+		if (client.doesObjectExist(PathDetailOs.getBucket(), ossPath.getInternalPath())) {
+			ossObject = client.getObject(PathDetailOs.getBucket(), ossPath.getInternalPath());
 		} else {
 			ossObject = new OSSObject();
-			ossObject.setKey(ossPath.toString());
+			ossObject.setKey(ossPath.getInternalPath());
 		}
 		return (A) new OssFileAttributes(ossObject);
 	}
 
 	public void readAttributes(OssPath path, AccessMode... modes) throws IOException {
 		try {
-			ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path.toString());
+			ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path.getInternalPath());
 			if (objectListing.getObjectSummaries() == null || objectListing.getObjectSummaries().isEmpty()) {
 				throw new IOException();
 			}

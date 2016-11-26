@@ -42,6 +42,11 @@ public class TestObjectSeekableByteStream {
 	public void testObjectSeekableByteStream() {
 		objectSeekableByteStream = new ObjectSeekableByteStream(PathDetailOs.getBucket(), key);
 		assertNotNull(objectSeekableByteStream);
+		try {
+			objectSeekableByteStream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Test
@@ -56,6 +61,12 @@ public class TestObjectSeekableByteStream {
 			System.out.println("testRead1=" + content);
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				objectSeekableByteStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		try {
@@ -92,6 +103,12 @@ public class TestObjectSeekableByteStream {
 			 Assert.assertTrue(objectSeekableByteStream.position() == 10);
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				objectSeekableByteStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	 }
 	
@@ -102,6 +119,12 @@ public class TestObjectSeekableByteStream {
 			Assert.assertTrue(objectSeekableByteStream.size() > 0);
 		} catch (IOException e) {
 			e.printStackTrace();
+		} finally {
+			try {
+				objectSeekableByteStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	 

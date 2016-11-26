@@ -36,9 +36,9 @@ public class FileUploader {
 	
 	public static void downloadKey() {
 		try {
-			String key = "log-count/outputfile.txt";
+			String key = "nbCloud/public/tasklogs/A__2016-10/project_5807135b0cf24f861c424f64/582ad9610cf219b5dd2845ce/stderr.job-0000000058183DD4000006FD0004910F.task582ad9610cf219b5dd2845ce-2.0";
 			DownloadFileRequest downloadFileRequest = new DownloadFileRequest(PathDetailOs.getBucket(), key);
-			downloadFileRequest.setDownloadFile("/home/novelbio/tmp/中文测试/output.txt");
+			downloadFileRequest.setDownloadFile("/home/novelbio/tmp/err.txt");
 			client.downloadFile(downloadFileRequest);
 		} catch (Throwable e) {
 			e.printStackTrace();
@@ -47,15 +47,16 @@ public class FileUploader {
 	
 	public static void main(String[] args) {
 		
-		downloadKey();
-//		uploadWorkJar();
+//		downloadKey();
+		uploadWorkJar();
+		System.out.println("finish");
 	}
 
 	public static void uploadWorkJar() {
-		String key = "work-jar/worker.tar.gz";
+		String key = "work-jar/appYarn.tar.gz";
 		client.deleteObject(PathDetailOs.getBucket(), key);
 		UploadFileRequest request = new UploadFileRequest(PathDetailOs.getBucket(), key);
-		request.setUploadFile("/home/novelbio/tmp/java-log-count/target/worker.tar.gz");
+		request.setUploadFile("/home/novelbio/deploy/aliyun/161125/appYarn.tar.gz");
 		try {
 			client.uploadFile(request);
 		} catch (Exception e) {

@@ -71,7 +71,7 @@ public class OssFileSystemProvider extends FileSystemProvider {
 
 	@Override
 	public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
-		return new ObjectSeekableByteStream(PathDetailOs.getBucket(), path.toString());
+		return new ObjectSeekableByteStream(PathDetailOs.getBucket(), ((OssPath)path).getInternalPath());
 	}
 	
 	/**
