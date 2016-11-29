@@ -157,7 +157,7 @@ public class OssPath implements Path {
 		initOffsets();
 		int count = offsets.length;
 		if (count == 0) // no elements so no parent
-			return null;
+			return new OssPath(this.ossFileSystem, new byte[] {});
 		int len = offsets[count - 1] - 1;
 		if (len <= 0) // parent is root only (may be null)
 			return getRoot();
@@ -171,7 +171,7 @@ public class OssPath implements Path {
 		if (this.isAbsolute())
 			return new OssPath(this.ossFileSystem, new byte[] { path[0] });
 		else
-			return null;
+			return new OssPath(this.ossFileSystem, new byte[] {});
 	}
 
 	@Override

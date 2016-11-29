@@ -102,9 +102,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public int write(ByteBuffer src) throws IOException {
-		if (ossFileExist) {
-			throw new RuntimeException("file exist. please delete first! file=" + fileName);
-		}
+//		if (ossFileExist) {
+//			throw new RuntimeException("file exist. please delete first! file=" + fileName);
+//		}
 		
 		int len = src.remaining();
 		src.position(src.position() + len);
