@@ -35,7 +35,7 @@ public class TestOssFileSystemProvider {
 			String file2 = "small.txt";
 			URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
-			OssPath ossPath = OssFileSystemProvider.toBosPath(path);
+			OssPath ossPath = OssFileSystemProvider.toOssPath(path);
 			Assert.assertNotNull(ossPath);
 			Assert.assertTrue(ossPath.toString().equals(file2));
 		} catch (Exception e) {
@@ -46,7 +46,7 @@ public class TestOssFileSystemProvider {
 			String file2 = "small.txt";
 			URI uri = new URI("oss://" + OssConfig.getBucket() + "/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
-			OssPath ossPath = OssFileSystemProvider.toBosPath(path);
+			OssPath ossPath = OssFileSystemProvider.toOssPath(path);
 			Assert.assertNotNull(ossPath);
 			Assert.assertTrue(ossPath.toString().equals(file2));
 		} catch (Exception e) {
@@ -58,7 +58,7 @@ public class TestOssFileSystemProvider {
 			String file2 = "small.txt";
 			URI uri = new URI("oss:/" + OssConfig.getBucket() + "/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
-			OssPath ossPath = OssFileSystemProvider.toBosPath(path);
+			OssPath ossPath = OssFileSystemProvider.toOssPath(path);
 			Assert.assertNotNull(ossPath);
 			Assert.assertFalse(ossPath.toString().equals(file2));
 		} catch (Exception e) {
@@ -70,7 +70,7 @@ public class TestOssFileSystemProvider {
 			String file2 = "small.txt";
 			URI uri = new URI("oss:/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
-			OssPath ossPath = OssFileSystemProvider.toBosPath(path);
+			OssPath ossPath = OssFileSystemProvider.toOssPath(path);
 			Assert.assertNotNull(ossPath);
 			Assert.assertTrue(ossPath.toString().equals(file2));
 		} catch (Exception e) {
@@ -138,7 +138,7 @@ public class TestOssFileSystemProvider {
 	@Test
 	public void testNewDirectoryStreamPathFilterOfQsuperPath() {
 		try {
-			String file2 = "novelbio/";
+			String file2 = "log-count/";
 			URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + file2);
 			Path path = new OssFileSystemProvider().getPath(uri);
 			DirectoryStream<Path> directoryStream = new OssFileSystemProvider().newDirectoryStream(path, null);

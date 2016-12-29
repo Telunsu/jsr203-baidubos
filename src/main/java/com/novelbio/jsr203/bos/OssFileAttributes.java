@@ -17,7 +17,6 @@
 */
 package com.novelbio.jsr203.bos;
 
-import java.io.IOException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
@@ -26,36 +25,34 @@ import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
-import com.aliyun.oss.model.ObjectMetadata;
 
 /**
- * 从百度bos能获取到的一些文件基本属性
+ * 从阿里云oos能获取到的一些文件基本属性
  */
 public class OssFileAttributes implements BasicFileAttributes {
 	/** Internal implementation of file status */
 	private final OSSObject ossObject;
 	private static final OSSClient client = OssInitiator.getClient();
 	private OSSObjectSummary summary;
+	/** 没有找到直接匹配的,找了一个下级类似的 */
+	private boolean isLikedSummary = false;
 	
 	public OssFileAttributes(OSSObject ossObject) {
 		this.ossObject = ossObject;
 		
 		String path = ossObject.getKey();
-		OSSObjectSummary likedSummary = null;
+		boolean isMapping = false;
 		ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path);
 		for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
 			if (summary.getKey().equals(path) || summary.getKey().equals(path + "/")) {
 				this.summary = summary;
+				isMapping = true;
 				break;
-			} else if(summary.getKey().startsWith(path)) {
-				likedSummary = summary;
 			}
 		}
-		
-		if (summary == null && likedSummary != null) {
-			summary = new OSSObjectSummary();
-			summary.setKey(path);
-			summary.setLastModified(likedSummary.getLastModified());
+		if (!isMapping && objectListing.getObjectSummaries().size() > 0) {
+			this.summary = objectListing.getObjectSummaries().get(0);
+			isLikedSummary = true;
 		}
 		
 	}
@@ -72,7 +69,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public boolean isDirectory() {
-		return summary != null && summary.getSize() == 0;
+		return isLikedSummary ? true : summary != null && summary.getSize() == 0;
 	}
 
 	@Override

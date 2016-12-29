@@ -34,7 +34,7 @@ public class OssFileSystemProvider extends FileSystemProvider {
 	public static final String SCHEME = "oss";
 	
 	  // Checks that the given file is a HadoopPath
-	static final OssPath toBosPath(Path path) {
+	static final OssPath toOssPath(Path path) {
 		if (path == null) {
 			throw new NullPointerException();
 		}
@@ -80,7 +80,7 @@ public class OssFileSystemProvider extends FileSystemProvider {
 	 */
 	@Override
 	public InputStream newInputStream(Path path, OpenOption... options) throws IOException {
-		return toBosPath(path).newInputStream(path, options);
+		return toOssPath(path).newInputStream(path, options);
 	}
 	
 	/* 获取文件夹信息,如里面的文件
@@ -88,32 +88,32 @@ public class OssFileSystemProvider extends FileSystemProvider {
 	 */
 	@Override
 	public DirectoryStream<Path> newDirectoryStream(Path dir, Filter<? super Path> filter) throws IOException {
-		return toBosPath(dir).newDirectoryStream(filter);
+		return toOssPath(dir).newDirectoryStream(filter);
 	}
 
 	@Override
 	public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
-		toBosPath(dir).createDirectory(attrs);
+		toOssPath(dir).createDirectory(attrs);
 	}
 
 	@Override
 	public void delete(Path path) throws IOException {
-		toBosPath(path).delete();
+		toOssPath(path).delete();
 	}
 
 	@Override
 	public void copy(Path source, Path target, CopyOption... options) throws IOException {
-		toBosPath(source).copy(toBosPath(target), options);
+		toOssPath(source).copy(toOssPath(target), options);
 	}
 
 	@Override
 	public void move(Path source, Path target, CopyOption... options) throws IOException {
-		toBosPath(source).move(toBosPath(target), options);
+		toOssPath(source).move(toOssPath(target), options);
 	}
 
 	@Override
 	public boolean isSameFile(Path path, Path path2) throws IOException {
-		return toBosPath(path).compareTo(toBosPath(path2)) == 0;
+		return toOssPath(path).compareTo(toOssPath(path2)) == 0;
 	}
 
 	@Override
@@ -130,14 +130,14 @@ public class OssFileSystemProvider extends FileSystemProvider {
 	public void checkAccess(Path path, AccessMode... modes) throws IOException {
 //		toBosPath(path).getFileSystem().checkAccess(toBosPath(path), modes);
 //		throw new UnsupportedOperationException("method no supported! method=checkAccess");
-		toBosPath(path).checkAccess(modes);
+		toOssPath(path).checkAccess(modes);
 	}
 
 	@Override
 	public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
 //		return toBosPath(path).getFileSystem().getView(toBosPath(path), type);
 //		throw new UnsupportedOperationException("method no supported! method=getFileAttributeView");
-		return (V) new OssFileAttrbuteView(toBosPath(path));
+		return (V) new OssFileAttrbuteView(toOssPath(path));
 	}
 
 	@Override
@@ -150,7 +150,7 @@ public class OssFileSystemProvider extends FileSystemProvider {
 		
 //		throw new UnsupportedOperationException("method no supported! method=readAttributes");
 		// move 方法会调用
-		return (A) toBosPath(path).readAttributes(type, options);
+		return (A) toOssPath(path).readAttributes(type, options);
 	}
 
 	@Override

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.assertj.core.util.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +42,6 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
-
-import net.sf.json.JSON;
 
 /**
  * 阿里云oss文件系统
@@ -57,6 +56,8 @@ public class OssFileSystem extends FileSystem {
 	private volatile boolean isOpen = true;
 	private String host;
 	FileSystemProvider fileSystemProvider;
+	OssFileAttributes ossFileAttributes;
+	OSSObject ossObject = null;
 	OSSClient client = OssInitiator.getClient();
 
 	public OssFileSystem(FileSystemProvider fileSystemProvider, URI uri) {
@@ -236,46 +237,48 @@ public class OssFileSystem extends FileSystem {
 		}
 		return lsOssPath.iterator();
 	}
+	
+	@VisibleForTesting
+	public Iterator<Path> iteratorOf(OssPath ossPath) throws Exception {
+		List<Path> lsOssPath = new ArrayList<>();
+		ListObjectsRequest listObjectsRequest = new ListObjectsRequest(PathDetailOs.getBucket());
+		// "/" 为文件夹的分隔符
+		listObjectsRequest.setDelimiter("/");
+		// 列出ossPath目录下的内容
+		String path = ossPath.getInternalPath();
+		if (!path.endsWith("/")) {
+			path = path + "/";
+		}
+		listObjectsRequest.setPrefix(path);
+		listObjectsRequest.setMaxKeys(1000);
+		ObjectListing objectListing = OssInitiator.getClient().listObjects(listObjectsRequest);
+
+		if (objectListing.getCommonPrefixes() != null) {
+			for (String name : objectListing.getCommonPrefixes()) {
+				URI uri = new URI("oss:/" + name);
+				lsOssPath.add(fileSystemProvider.getPath(uri));
+			}
+		}
+
+		if (objectListing.getObjectSummaries() != null) {
+			for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
+				if (summary.getKey().equals(path)) {
+					// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
+					continue;
+				}
+				URI uri = new URI("oss:/" + summary.getKey());
+				lsOssPath.add(fileSystemProvider.getPath(uri));
+			}
+		}
+		return lsOssPath.iterator();
+	}
 
 	public OSSClient getBos() {
 		return this.client;
 	}
 	
-//	private void isFileExist() {
-//
-//	}
-//
-//	private boolean isDir(String absolutePathStr) {
-//		String[] bucket2Key = getBucket2Key(absolutePathStr);
-//		String key = addSep(bucket2Key[1]) + DIR_SUFFIX;
-//		try {
-//			client.getObject(bucket2Key[0], bucket2Key[1]);
-//			return true;
-//		} catch (BceServiceException e) {
-//			if (!"NoSuchKey".equals(e.getErrorCode())) {
-//				throw e;
-//			}
-//		}
-//		return false;
-//	}
-//
-//	private boolean isDirEmpty(String absolutePathStr) {
-//		String[] bucket2Key = getBucket2Key(absolutePathStr);
-//		String key = addSep(bucket2Key[1]);
-//		try {
-//			// client.(bucket2Key[0], bucket2Key[1]);
-//			return true;
-//		} catch (BceServiceException e) {
-//			if (!"NoSuchKey".equals(e.getErrorCode())) {
-//				throw e;
-//			}
-//		}
-//		return false;
-//	}
-
 	/** 只能删除文件，不能删除文件夹 */
 	protected void deleteFile(OssPath path) {
-//		String[] bucket2Key = getBucket2Key(absolutePathStr);
 		try {
 			// TODO 删除文件,需判断是不是一个文件,不能把文件夹删除了.
 			if (client.doesObjectExist(PathDetailOs.getBucket(), path.getInternalPath())) {
@@ -298,58 +301,6 @@ public class OssFileSystem extends FileSystem {
 		
 		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
 	}
-
-//	/**
-//	 * 输入类似 bos:/novelbio/myfile/test.txt 类型 novelbio是bucket myfile/test.txt 是
-//	 * key
-//	 * 
-//	 * @param path
-//	 * @return
-//	 */
-//	private String[] getBucket2KeyWithBucket(String path) {
-//		path = PathDetailOs.removeSplashHead(path, false);
-//		String uploadPath = path.replaceFirst(OssFileSystemProvider.SCHEME + ":", "");
-//		uploadPath = PathDetailOs.removeSplashHead(uploadPath, false);
-//		String[] bucketName = uploadPath.split("/+");
-//		String bucket = bucketName[0];
-//		String key = uploadPath.replaceFirst(bucket, "");
-//		return new String[] { bucket, key };
-//	}
-
-//	/**
-//	 * 输入类似 bos:/myfile/test.txt 类型 novelbio是bucket myfile/test.txt 是 key
-//	 * 
-//	 * @param path
-//	 * @return
-//	 */
-//	private String[] getBucket2Key(String path) {
-//		path = PathDetailOs.removeSplashHead(path, false);
-//		String uploadPath = path.replaceFirst(OssFileSystemProvider.SCHEME + ":", "");
-//		uploadPath = removeSplashHead(uploadPath, false);
-//		return new String[] { OssConfig.getBucket(), uploadPath };
-//	}
-
-//	/**
-//	 * 将文件开头的"//"这种多个的去除
-//	 * 
-//	 * @param fileName
-//	 * @param keepOne
-//	 *            是否保留一个“/”
-//	 * @return
-//	 */
-//	private static String removeSplashHead(String fileName, boolean keepOne) {
-//		String head = "//";
-//		if (!keepOne) {
-//			head = "/";
-//		}
-//		String fileNameThis = fileName;
-//		while (fileName.startsWith(head)) {
-//			fileName = fileName.substring(1);
-//		}
-//		return fileNameThis;
-////		uploadPath = PathDetailOs.removeSplashHead(uploadPath, false);
-////		return new String[] { PathDetailOs.getBucket(), uploadPath };
-//	}
 
 	/**
 	 * 添加文件分割符
@@ -428,19 +379,26 @@ public class OssFileSystem extends FileSystem {
 	}
 
 	public <A extends BasicFileAttributes> A readAttributes(OssPath ossPath, Class<A> type, LinkOption[] options) {
-		OSSObject ossObject = null;
-		if (client.doesObjectExist(PathDetailOs.getBucket(), ossPath.getInternalPath())) {
-			ossObject = client.getObject(PathDetailOs.getBucket(), ossPath.getInternalPath());
-		} else {
-			ossObject = new OSSObject();
-			ossObject.setKey(ossPath.getInternalPath());
+		if (ossObject == null) {
+			if (client.doesObjectExist(PathDetailOs.getBucket(), ossPath.getInternalPath())) {
+				ossObject = client.getObject(PathDetailOs.getBucket(), ossPath.getInternalPath());
+			} else {
+				ossObject = new OSSObject();
+				ossObject.setKey(ossPath.getInternalPath());
+			}
 		}
-		return (A) new OssFileAttributes(ossObject);
+		if (ossFileAttributes == null) {
+			ossFileAttributes = new OssFileAttributes(ossObject);
+		}
+		return (A) ossFileAttributes ;
 	}
 
 	public void readAttributes(OssPath path, AccessMode... modes) throws IOException {
 		try {
-			ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path.getInternalPath());
+			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(OssConfig.getBucket());
+			listObjectsRequest.setKey(path.getInternalPath());
+			listObjectsRequest.setMaxKeys(1);
+			ObjectListing objectListing = client.listObjects(listObjectsRequest);
 			if (objectListing.getObjectSummaries() == null || objectListing.getObjectSummaries().isEmpty()) {
 				throw new IOException();
 			}

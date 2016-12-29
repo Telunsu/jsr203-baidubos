@@ -63,8 +63,8 @@ public class TestOssInitiator {
 			String key2 = basePath + "myfile/test/";
 			String key3 = basePath + "myfile/test2/";
 			
-			File bigFile = new File("/home/novelbio/git/jsr203-baidubos/src/test/resources/testFile/big.bam");
-			File smallFile = new File("/home/novelbio/git/jsr203-baidubos/src/test/resources/testFile/small.txt");
+			File bigFile = new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/big.bam");
+			File smallFile = new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/small.txt");
 			Assert.assertTrue(bigFile.exists());
 			Assert.assertTrue(smallFile.exists());
 			
@@ -157,7 +157,7 @@ public class TestOssInitiator {
 		try {
 			//上传的时候指定的key,前边加一个/或两个/,最终都会被去掉.后面拿到的key,最前边的/都被去掉了.
 			String key4 = "path/readFile";
-			File smallFile = new File("/home/novelbio/git/jsr203-baidubos/src/test/resources/testFile/small.txt");
+			File smallFile = new File("/home/novelbio/git/jsr203-aliyun/src/test/resources/testFile/small.txt");
 			client.putObject(bucket, key4, smallFile);
 			
 			ObjectListing listing = client.listObjects(bucket);
