@@ -24,14 +24,6 @@ public class FileCopyer {
 	// 创建OSSClient实例
 	protected static OSSClient client = OssInitiator.getClient();
 	
-	public static void main(String[] args) {
-		long time1 = System.currentTimeMillis();
-		fileCopy("bigFile.txt", "bigFile_copy.txt");
-		long time2 = System.currentTimeMillis();
-		System.out.println("copy finished.time=" + (time2 - time1));
-	}
-
-
 	public static void fileCopy(String source, String target) {
 		System.out.println("copy file " + source + " to " + target);
 		
@@ -40,9 +32,9 @@ public class FileCopyer {
 		CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
 		
 		try {
-			String uploadId = AliyunOSSCopy.claimUploadId(PathDetailOs.getBucket(), target);
+			String uploadId = AliyunOSSCopy.claimUploadId(AliyunOSSCopy.TARGET_BUCKET, target);
 			
-			OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source);
+			OSSObject ossObject = client.getObject(AliyunOSSCopy.SOURCE_BUCKET, source);
 			
 			long length = ossObject.getObjectMetadata().getContentLength();
 

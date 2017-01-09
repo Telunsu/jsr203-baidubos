@@ -1,6 +1,5 @@
 package com.novelbio.jsr203.bos;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -24,7 +23,8 @@ public class AliyunOSSCopy implements Callable<PartETag> {
 	private static Logger logger = LoggerFactory.getLogger(AliyunOSSCopy.class);
 
 	protected static OSSClient client = OssInitiator.getClient();
-	private static String bucketName = PathDetailOs.getBucket();
+	public static String SOURCE_BUCKET = PathDetailOs.getBucket();
+	public static String TARGET_BUCKET = PathDetailOs.getBucket();
 
 	private String sourceKey;
 	private String targetKey;
@@ -65,7 +65,7 @@ public class AliyunOSSCopy implements Callable<PartETag> {
 		try {
 
 			// 创建UploadPartRequest，上传分块
-			UploadPartCopyRequest uploadPartCopyRequest = new UploadPartCopyRequest(bucketName, sourceKey, bucketName, targetKey);
+			UploadPartCopyRequest uploadPartCopyRequest = new UploadPartCopyRequest(SOURCE_BUCKET, sourceKey, TARGET_BUCKET, targetKey);
 			uploadPartCopyRequest.setUploadId(uploadId);
 			uploadPartCopyRequest.setBeginIndex(FileCopyer.PART_SIZE_UNIT * (partNumber - 1));
 			uploadPartCopyRequest.setPartSize(partSize);
@@ -88,7 +88,7 @@ public class AliyunOSSCopy implements Callable<PartETag> {
 	 */
 	protected static String claimUploadId(String bucketName, String key) {
 		InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(bucketName, key);
-		InitiateMultipartUploadResult result = OssInitiator.getClient().initiateMultipartUpload(request);
+		InitiateMultipartUploadResult result = client.initiateMultipartUpload(request);
 		logger.info(result.getUploadId());
 		return result.getUploadId();
 	}
@@ -107,7 +107,7 @@ public class AliyunOSSCopy implements Callable<PartETag> {
 			}
 		});
 
-		CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(bucketName,
+		CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(TARGET_BUCKET,
 				sourcekey, uploadId, partETags);
 		// 完成分块上传
 		client.completeMultipartUpload(completeMultipartUploadRequest);
@@ -119,7 +119,7 @@ public class AliyunOSSCopy implements Callable<PartETag> {
 	 * @param uploadId
 	 */
 	protected static void listAllParts(String uploadId, String key) {
-		ListPartsRequest listPartsRequest = new ListPartsRequest(bucketName, key, uploadId);
+		ListPartsRequest listPartsRequest = new ListPartsRequest(TARGET_BUCKET, key, uploadId);
 		// 获取上传的所有分块信息
 		PartListing partListing = client.listParts(listPartsRequest);
 
