@@ -1,5 +1,6 @@
 package com.novelbio.jsr203.bos;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -79,6 +80,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		if (executorService != null) {
 			executorService.shutdown();
 		}
+		
+		
+		createDirectory(this.fileName.substring(0, this.fileName.lastIndexOf("/")));
 	}
 
 	@Override
@@ -199,4 +203,24 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		throw new RuntimeException("method doesn't support");
 	}
 
+	/**
+	 * 创建文件夹
+	 * 
+	 * @param path
+	 */
+	protected void createDirectory(String path) {
+		if(!path.endsWith("/")) {
+			path = path + "/";
+		}
+		
+		if (client.doesObjectExist(PathDetailOs.getBucket(), path)) {
+			return;
+		}
+		
+		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
+		// add by fans.fan 170110 递归添加文件夹
+		path = path.substring(0, path.length() -1);
+		createDirectory(path.substring(0, path.lastIndexOf("/")));
+		// end by fans.fan 
+	}
 }

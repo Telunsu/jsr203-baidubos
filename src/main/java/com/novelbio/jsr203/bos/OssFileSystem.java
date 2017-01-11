@@ -295,11 +295,15 @@ public class OssFileSystem extends FileSystem {
 		}
 		
 		if (client.doesObjectExist(PathDetailOs.getBucket(), path)) {
-			logger.warn("path is existed.path=" + path);
+//			logger.warn("path is existed.path=" + path);
 			return;
 		}
 		
 		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
+		// add by fans.fan 170110 递归添加文件夹
+		path = path.substring(0, path.length() -1);
+		createDirectory(path.substring(0, path.lastIndexOf("/")), attrs);
+		// end by fans.fan 
 	}
 
 	/**
@@ -344,6 +348,10 @@ public class OssFileSystem extends FileSystem {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
 		
+		// add by fans.fan 170110
+		createDirectory(((OssPath)target.getParent()).getInternalPath(), null);
+		// end by fans.fan
+		
 		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.getInternalPath());
 		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
 			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.getInternalPath(), PathDetailOs.getBucket(), target.getInternalPath());
@@ -367,6 +375,10 @@ public class OssFileSystem extends FileSystem {
 			throw new RuntimeException("target file exist! target=" + target);
 		}
 		
+		// add by fans.fan 170110
+		createDirectory(((OssPath)target.getParent()).getInternalPath(), null);
+		// end by fans.fan
+				
 		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.getInternalPath());
 		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
 			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.getInternalPath(), PathDetailOs.getBucket(), target.getInternalPath());
@@ -395,12 +407,24 @@ public class OssFileSystem extends FileSystem {
 
 	public void readAttributes(OssPath path, AccessMode... modes) throws IOException {
 		try {
-			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(OssConfig.getBucket());
-			listObjectsRequest.setKey(path.getInternalPath());
-			listObjectsRequest.setMaxKeys(1);
-			ObjectListing objectListing = client.listObjects(listObjectsRequest);
-			if (objectListing.getObjectSummaries() == null || objectListing.getObjectSummaries().isEmpty()) {
-				throw new IOException();
+//			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(OssConfig.getBucket());
+//			listObjectsRequest.setKey(path.getInternalPath());
+//			listObjectsRequest.setMaxKeys(1);
+//			logger.info("start query listObjects. path=" + path.getInternalPath());
+//			long time1 = System.currentTimeMillis();
+//			ObjectListing objectListing = client.listObjects(listObjectsRequest);
+//			long time2 = System.currentTimeMillis();
+//			logger.info("end query listObjects. path=" + path.getInternalPath() + ". cost time=" + (time2 - time1));
+//			if (objectListing.getObjectSummaries() == null || objectListing.getObjectSummaries().isEmpty()) {
+//				throw new IOException();
+//			}
+			boolean isExist = client.doesObjectExist(OssConfig.getBucket(), path.getInternalPath());
+			if (!isExist && !path.getInternalPath().endsWith("/")) {
+				isExist = client.doesObjectExist(OssConfig.getBucket(), path.getInternalPath() + "/");
+				if (!isExist) {
+					logger.info("file not exist." + path.getInternalPath());
+					throw new IOException();
+				}
 			}
 		} catch (OSSException e) {
 			throw new IOException(e);
