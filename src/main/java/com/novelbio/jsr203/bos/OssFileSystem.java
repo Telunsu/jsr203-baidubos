@@ -37,6 +37,7 @@ import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.CopyObjectRequest;
+import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObject;
@@ -298,13 +299,28 @@ public class OssFileSystem extends FileSystem {
 		return this.client;
 	}
 	
-	/** 只能删除文件，不能删除文件夹 */
+	/** 只能删除文件，文件夹会全部删除 */
 	protected void deleteFile(OssPath path) {
 		try {
-			// TODO 删除文件,需判断是不是一个文件,不能把文件夹删除了.
-			if (client.doesObjectExist(PathDetailOs.getBucket(), path.getInternalPath())) {
-				client.deleteObject(PathDetailOs.getBucket(), path.getInternalPath());
-			}
+			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(PathDetailOs.getBucket());
+			// 列出根目录下的所有文件和文件夹
+			listObjectsRequest.setPrefix(path.getInternalPath());
+			listObjectsRequest.setMaxKeys(1000);
+			String nextMarker = null;
+			ObjectListing objectListing = null;
+			List<String> lsKeys = new ArrayList<>();
+			do {
+				listObjectsRequest.setMarker(nextMarker);
+			    objectListing = client.listObjects(listObjectsRequest);
+			    if (objectListing.getObjectSummaries() != null && !objectListing.getObjectSummaries().isEmpty()) {
+			    	objectListing.getObjectSummaries().forEach(bos -> lsKeys.add(bos.getKey()));
+			    }
+			    nextMarker = objectListing.getNextMarker();
+			} while (objectListing.isTruncated());
+			
+			DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(PathDetailOs.getBucket());
+			deleteObjectsRequest.setKeys(lsKeys);
+			client.deleteObjects(deleteObjectsRequest);
 		} catch (OSSException|ClientException e) {
 			throw e;
 		}
