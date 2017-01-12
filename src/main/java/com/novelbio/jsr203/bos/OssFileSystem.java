@@ -100,16 +100,23 @@ public class OssFileSystem extends FileSystem {
 		listObjectsRequest.setDelimiter("/");
 		// 列出根目录下的所有文件和文件夹
 		listObjectsRequest.setPrefix("");
-		ObjectListing lsObject = client.listObjects(listObjectsRequest);
+		listObjectsRequest.setMaxKeys(1000);
+		String nextMarker = null;
+		ObjectListing objectListing = null;
 		List<Path> lsPaths = new ArrayList<>();
-		if (lsObject.getObjectSummaries() != null) {
-			// 文件
-			lsObject.getObjectSummaries().forEach(bos -> lsPaths.add(new OssPath(this, bos.getKey().getBytes())));
-		}
-		if (lsObject.getCommonPrefixes() != null) {
-			// 文件夹
-			lsObject.getCommonPrefixes().forEach(prefix -> lsPaths.add(new OssPath(this, prefix.getBytes())));
-		}
+		do {
+			listObjectsRequest.setMarker(nextMarker);
+		    objectListing = client.listObjects(listObjectsRequest);
+		    if (objectListing.getObjectSummaries() != null && !objectListing.getObjectSummaries().isEmpty()) {
+		    	// 文件
+		    	objectListing.getObjectSummaries().forEach(bos -> lsPaths.add(new OssPath(this, bos.getKey().getBytes())));
+		    }
+		    if (objectListing.getCommonPrefixes() != null && !objectListing.getCommonPrefixes().isEmpty()) {
+		    	// 文件夹
+		    	objectListing.getCommonPrefixes().forEach(prefix -> lsPaths.add(new OssPath(this, prefix.getBytes())));
+		    }
+		    nextMarker = objectListing.getNextMarker();
+		} while (objectListing.isTruncated());
 		return lsPaths;
 	}
 
@@ -216,25 +223,32 @@ public class OssFileSystem extends FileSystem {
 		}
 		listObjectsRequest.setPrefix(path);
 		listObjectsRequest.setMaxKeys(1000);
-		ObjectListing objectListing = OssInitiator.getClient().listObjects(listObjectsRequest);
-
-		if (objectListing.getCommonPrefixes() != null) {
-			for (String name : objectListing.getCommonPrefixes()) {
-				URI uri = new URI("oss:/" + name);
-				lsOssPath.add(fileSystemProvider.getPath(uri));
-			}
-		}
-
-		if (objectListing.getObjectSummaries() != null) {
-			for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
-				if (summary.getKey().equals(path)) {
-					// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
-					continue;
+		String nextMarker = null;
+		
+		ObjectListing objectListing = null;
+		do {
+			listObjectsRequest.setMarker(nextMarker);
+		    objectListing = client.listObjects(listObjectsRequest);
+			if (objectListing.getCommonPrefixes() != null && !objectListing.getCommonPrefixes().isEmpty()) {
+				for (String name : objectListing.getCommonPrefixes()) {
+					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + name);
+					lsOssPath.add(fileSystemProvider.getPath(uri));
 				}
-				URI uri = new URI("oss:/" + summary.getKey());
-				lsOssPath.add(fileSystemProvider.getPath(uri));
 			}
-		}
+
+			if (objectListing.getObjectSummaries() != null) {
+				for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
+					if (summary.getKey().equals(path)) {
+						// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
+						continue;
+					}
+					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + summary.getKey());
+					lsOssPath.add(fileSystemProvider.getPath(uri));
+				}
+			}
+		    nextMarker = objectListing.getNextMarker();
+		} while (objectListing.isTruncated());
+
 		return lsOssPath.iterator();
 	}
 	
@@ -251,29 +265,36 @@ public class OssFileSystem extends FileSystem {
 		}
 		listObjectsRequest.setPrefix(path);
 		listObjectsRequest.setMaxKeys(1000);
-		ObjectListing objectListing = OssInitiator.getClient().listObjects(listObjectsRequest);
-
-		if (objectListing.getCommonPrefixes() != null) {
-			for (String name : objectListing.getCommonPrefixes()) {
-				URI uri = new URI("oss:/" + name);
-				lsOssPath.add(fileSystemProvider.getPath(uri));
-			}
-		}
-
-		if (objectListing.getObjectSummaries() != null) {
-			for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
-				if (summary.getKey().equals(path)) {
-					// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
-					continue;
+		String nextMarker = null;
+		
+		ObjectListing objectListing = null;
+		do {
+			listObjectsRequest.setMarker(nextMarker);
+		    objectListing = client.listObjects(listObjectsRequest);
+		    if (objectListing.getCommonPrefixes() != null && !objectListing.getCommonPrefixes().isEmpty()) {
+				for (String name : objectListing.getCommonPrefixes()) {
+					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + name);
+					lsOssPath.add(fileSystemProvider.getPath(uri));
 				}
-				URI uri = new URI("oss:/" + summary.getKey());
-				lsOssPath.add(fileSystemProvider.getPath(uri));
 			}
-		}
+
+			if (objectListing.getObjectSummaries() != null && !objectListing.getObjectSummaries().isEmpty()) {
+				for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
+					if (summary.getKey().equals(path)) {
+						// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
+						continue;
+					}
+					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + summary.getKey());
+					lsOssPath.add(fileSystemProvider.getPath(uri));
+				}
+			}
+		    nextMarker = objectListing.getNextMarker();
+		} while (objectListing.isTruncated());
+
 		return lsOssPath.iterator();
 	}
 
-	public OSSClient getBos() {
+	public OSSClient getOss() {
 		return this.client;
 	}
 	

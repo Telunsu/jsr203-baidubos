@@ -12,13 +12,15 @@ public class OssFileAttrbuteView implements BasicFileAttributeView {
 
 	private final OssPath path;
 	
+	private OSSObject ossObject = null;
+	
 	public OssFileAttrbuteView(OssPath bosPath) {
 		this.path = bosPath;
 	}
 	
 	@Override
 	public String name() {
-		return "oss";
+		return OssFileSystemProvider.SCHEME;
 	}
 
 	/* 
@@ -27,17 +29,12 @@ public class OssFileAttrbuteView implements BasicFileAttributeView {
 	 */
 	@Override
 	public BasicFileAttributes readAttributes() throws IOException {
-//		String key = path.toFile().getAbsolutePath();
-//		GenericRequest getObjMetadata = new GenericRequest(PathDetail.getBucket(), key);
-//		ObjectListing lsObjResponse = path.getFileSystem().getBos().listObjects(PathDetail.getBucket(), key);
-//		
-//		Optional<OSSObjectSummary> bosObjSummary = null;
-//		if (lsObjResponse.getObjectSummaries() != null) {
-//			bosObjSummary = lsObjResponse.getObjectSummaries().stream().findFirst();
-//		}
-//		ObjectMetadata ObjectMetadata = path.getFileSystem().getBos().getObjectMetadata(getObjMetadata);
-		
-		OSSObject ossObject = OssInitiator.getClient().getObject(PathDetailOs.getBucket(), path.getInternalPath());
+		if (ossObject == null) {
+			ossObject = path.getFileSystem().getOss().getObject(PathDetailOs.getBucket(), path.getInternalPath());
+			if (ossObject == null && !path.getInternalPath().endsWith("/")) {
+				ossObject = path.getFileSystem().getOss().getObject(PathDetailOs.getBucket(), path.getInternalPath() + "/");
+			}
+		}
 		
 		return new OssFileAttributes(ossObject);
 	}

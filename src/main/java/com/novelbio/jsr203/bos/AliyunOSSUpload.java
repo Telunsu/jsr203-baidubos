@@ -113,7 +113,7 @@ public class AliyunOSSUpload implements Callable<PartETag> {
 	 */
 	protected static String claimUploadId(String bucketName, String key) {
 		InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(bucketName, key);
-		InitiateMultipartUploadResult result = OssInitiator.getClient().initiateMultipartUpload(request);
+		InitiateMultipartUploadResult result = client.initiateMultipartUpload(request);
 		logger.info(result.getUploadId());
 		return result.getUploadId();
 	}

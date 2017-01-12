@@ -21,40 +21,43 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.aliyun.oss.OSSClient;
+import com.aliyun.oss.OSSException;
 import com.aliyun.oss.model.OSSObject;
-import com.aliyun.oss.model.OSSObjectSummary;
-import com.aliyun.oss.model.ObjectListing;
+import com.aliyun.oss.model.ObjectMetadata;
 
 /**
  * 从阿里云oos能获取到的一些文件基本属性
  */
 public class OssFileAttributes implements BasicFileAttributes {
 	/** Internal implementation of file status */
-	private final OSSObject ossObject;
+	private static final Logger logger = LoggerFactory.getLogger(OssFileAttributes.class);
+	
+	private OSSObject ossObject;
 	private static final OSSClient client = OssInitiator.getClient();
-	private OSSObjectSummary summary;
-	/** 没有找到直接匹配的,找了一个下级类似的 */
+	private ObjectMetadata objectMetadata;
+	/** 没有找到直接匹配的,找了一个加/后相同的 */
 	private boolean isLikedSummary = false;
 	
 	public OssFileAttributes(OSSObject ossObject) {
 		this.ossObject = ossObject;
-		
-		String path = ossObject.getKey();
-		boolean isMapping = false;
-		ObjectListing objectListing = client.listObjects(OssConfig.getBucket(), path);
-		for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
-			if (summary.getKey().equals(path) || summary.getKey().equals(path + "/")) {
-				this.summary = summary;
-				isMapping = true;
-				break;
+		try {
+			this.objectMetadata = client.getObjectMetadata(OssConfig.getBucket(), this.ossObject.getKey());
+		} catch (OSSException e) {
+			if ("NoSuchKey".equals(e.getErrorCode())) {
+				try {
+					this.objectMetadata = client.getObjectMetadata(OssConfig.getBucket(), this.ossObject.getKey() + "/");
+					if (this.objectMetadata != null) {
+						this.isLikedSummary = true;
+					}
+				} catch (OSSException e2) {
+					logger.error("key=" + ossObject.getKey(), e);
+				}
 			}
 		}
-		if (!isMapping && objectListing.getObjectSummaries().size() > 0) {
-			this.summary = objectListing.getObjectSummaries().get(0);
-			isLikedSummary = true;
-		}
-		
 	}
 
 	@Override
@@ -69,7 +72,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public boolean isDirectory() {
-		return isLikedSummary ? true : summary != null && summary.getSize() == 0;
+		return isLikedSummary ? true : objectMetadata != null && objectMetadata.getContentLength() == 0;
 	}
 
 	@Override
@@ -89,8 +92,8 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public FileTime lastAccessTime() {
-		if (summary != null) {
-			return FileTime.from(this.summary.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		if (this.objectMetadata != null) {
+			return FileTime.from(this.objectMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
 		} else {
 			return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
 		}
@@ -103,7 +106,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 			if (this.ossObject.getObjectMetadata().getLastModified() != null) {
 				return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
 			} else {
-				return FileTime.from(this.summary.getLastModified().getTime(), TimeUnit.MILLISECONDS);
+				return FileTime.from(this.objectMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
 			}
 		} catch (Exception e) {
 			// TODO: handle exception
@@ -113,8 +116,8 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public long size() {
-		if (summary != null) {
-			return this.summary.getSize();
+		if (this.objectMetadata != null) {
+			return this.objectMetadata.getContentLength();
 		} else {
 			return this.ossObject.getObjectMetadata().getContentLength();
 		}
