@@ -444,17 +444,6 @@ public class OssFileSystem extends FileSystem {
 
 	public void readAttributes(OssPath path, AccessMode... modes) throws IOException {
 		try {
-//			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(OssConfig.getBucket());
-//			listObjectsRequest.setKey(path.getInternalPath());
-//			listObjectsRequest.setMaxKeys(1);
-//			logger.info("start query listObjects. path=" + path.getInternalPath());
-//			long time1 = System.currentTimeMillis();
-//			ObjectListing objectListing = client.listObjects(listObjectsRequest);
-//			long time2 = System.currentTimeMillis();
-//			logger.info("end query listObjects. path=" + path.getInternalPath() + ". cost time=" + (time2 - time1));
-//			if (objectListing.getObjectSummaries() == null || objectListing.getObjectSummaries().isEmpty()) {
-//				throw new IOException();
-//			}
 			boolean isExist = client.doesObjectExist(OssConfig.getBucket(), path.getInternalPath());
 			if (!isExist && !path.getInternalPath().endsWith("/")) {
 				isExist = client.doesObjectExist(OssConfig.getBucket(), path.getInternalPath() + "/");
