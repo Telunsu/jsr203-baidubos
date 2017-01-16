@@ -100,6 +100,12 @@ public class OssFileSystemProvider extends FileSystemProvider {
 	public void delete(Path path) throws IOException {
 		toOssPath(path).delete();
 	}
+	
+	@Override
+	public boolean deleteIfExists(Path path) throws IOException {
+		delete(path);
+		return true;
+	}
 
 	@Override
 	public void copy(Path source, Path target, CopyOption... options) throws IOException {

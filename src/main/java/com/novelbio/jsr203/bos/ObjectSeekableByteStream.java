@@ -81,8 +81,10 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			executorService.shutdown();
 		}
 		
-		
-		createDirectory(this.fileName.substring(0, this.fileName.lastIndexOf("/")));
+		int index = this.fileName.lastIndexOf("/");
+		if (index > 0) {
+			createDirectory(this.fileName.substring(0, index));
+		}
 	}
 
 	@Override
@@ -220,7 +222,10 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
 		// add by fans.fan 170110 递归添加文件夹
 		path = path.substring(0, path.length() -1);
-		createDirectory(path.substring(0, path.lastIndexOf("/")));
+		int index = path.lastIndexOf("/");
+		if (index > 0) {
+			createDirectory(path.substring(0, index));
+		}
 		// end by fans.fan 
 	}
 }

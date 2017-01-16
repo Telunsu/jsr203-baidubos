@@ -244,7 +244,9 @@ public class OssFileSystem extends FileSystem {
 						continue;
 					}
 					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + summary.getKey());
-					lsOssPath.add(fileSystemProvider.getPath(uri));
+					if (!lsOssPath.contains(fileSystemProvider.getPath(uri))) {
+						lsOssPath.add(fileSystemProvider.getPath(uri));
+					}
 				}
 			}
 		    nextMarker = objectListing.getNextMarker();
@@ -339,7 +341,10 @@ public class OssFileSystem extends FileSystem {
 		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
 		// add by fans.fan 170110 递归添加文件夹
 		path = path.substring(0, path.length() -1);
-		createDirectory(path.substring(0, path.lastIndexOf("/")), attrs);
+		int index = path.lastIndexOf("/");
+		if (index > 0) {
+			createDirectory(path.substring(0, index), attrs);
+		}
 		// end by fans.fan 
 	}
 

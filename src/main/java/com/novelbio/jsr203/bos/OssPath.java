@@ -479,7 +479,7 @@ public class OssPath implements Path {
 	}
 
 	void createDirectory(FileAttribute<?>... attrs) throws IOException {
-		this.ossFileSystem.createDirectory(new String(this.path), attrs);
+		this.ossFileSystem.createDirectory(this.getInternalPath(), attrs);
 	}
 
 	@Override

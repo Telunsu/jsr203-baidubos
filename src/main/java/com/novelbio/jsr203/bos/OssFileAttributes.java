@@ -54,7 +54,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 						this.isLikedSummary = true;
 					}
 				} catch (OSSException e2) {
-					logger.error("key=" + ossObject.getKey(), e);
+					logger.warn("no such key.key=" + ossObject.getKey());
 				}
 			}
 		}
