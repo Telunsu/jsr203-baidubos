@@ -459,6 +459,14 @@ public class OssPath implements Path {
 
 	@Override
 	public URI toUri() {
+//		int len = toAbsolutePath().path.length;
+//		if (len > 0) {
+//			len = len -1;
+//		}
+//		byte[] resPath = new byte[len];
+//		if (toAbsolutePath().path.length > 0 && toAbsolutePath().path[0] == '/') {
+//			System.arraycopy(path, 1, resPath, 0, len);
+//		}
 		try {
 			if (ossFileSystem.getHost() != null && !"".equals(ossFileSystem.getHost())) {
 				return new URI(OssFileSystemProvider.SCHEME + "://" + ossFileSystem.getHost() + new String(toAbsolutePath().path));
@@ -482,7 +490,12 @@ public class OssPath implements Path {
 //		} else {
 //			return new String(this.path);
 //		}
-		return toUri().toString();
+		
+		if (isAbsolute()) {
+			return toUri().toString();
+		} else {
+			return new String(this.path);
+		}
 	}
 
 	DirectoryStream<Path> newDirectoryStream(Filter<? super Path> filter) throws IOException {
