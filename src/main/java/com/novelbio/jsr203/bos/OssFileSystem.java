@@ -321,8 +321,10 @@ public class OssFileSystem extends FileSystem {
 			} while (objectListing.isTruncated());
 			
 			DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(PathDetailOs.getBucket());
-			deleteObjectsRequest.setKeys(lsKeys);
-			client.deleteObjects(deleteObjectsRequest);
+			if (!lsKeys.isEmpty()) {
+				deleteObjectsRequest.setKeys(lsKeys);
+				client.deleteObjects(deleteObjectsRequest);
+			}
 		} catch (OSSException|ClientException e) {
 			throw e;
 		}
@@ -444,7 +446,7 @@ public class OssFileSystem extends FileSystem {
 		if (ossFileAttributes == null) {
 			ossFileAttributes = new OssFileAttributes(ossObject);
 		}
-		return (A) ossFileAttributes ;
+		return (A) ossFileAttributes;
 	}
 
 	public void readAttributes(OssPath path, AccessMode... modes) throws IOException {
