@@ -32,13 +32,13 @@ import com.aliyun.oss.model.PartETag;
  */
 public class ObjectSeekableByteStream implements SeekableByteChannel {
 	private static final Logger logger = LoggerFactory.getLogger(ObjectSeekableByteStream.class);
-	
-	/** 
-	 * 上传文件单位分块大小,默认1G
-	 * TODO 这个在本地远程测试效果一般,但考虑将来在阿里patch中每秒60M+的传输速率.特设置这么大,后续可根据需要调整.
+
+	/**
+	 * 上传文件单位分块大小,默认1G TODO
+	 * 这个在本地远程测试效果一般,但考虑将来在阿里patch中每秒60M+的传输速率.特设置这么大,后续可根据需要调整.
 	 */
 	public static final long UPLOAD_PART_SIZE = 100l << 20;
-	
+
 	OSSClient client = OssInitiator.getClient();
 	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于100，则多余线程会放入队列中依次执行
 	ExecutorService executorService = null;
@@ -74,13 +74,13 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		if (length > 0) {
 			uploadPart(true);
 		}
-		
+
 		finish();
-		
+
 		if (executorService != null) {
 			executorService.shutdown();
 		}
-		
+
 		int index = this.fileName.lastIndexOf("/");
 		if (index > 0) {
 			createDirectory(this.fileName.substring(0, index));
@@ -89,19 +89,52 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public int read(ByteBuffer dst) throws IOException {
-		int num;
+		int num = 0;
+		InputStream is = null;
+		long start = position, end = position + dst.capacity();
 		try {
-			int dstPos = dst.position();
+			// int dstPos = dst.position();
 			GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
-			long start = position, end = position + dst.capacity();
-			getObjectRequest.setRange(start, end);
+			getObjectRequest.setRange(start, end - 1);
 			OSSObject object = client.getObject(getObjectRequest);
-			InputStream is = object.getObjectContent();
-			num = is.read(dst.array(), dst.position(), dst.limit());
-			position = position + dst.limit() - dstPos;
-			is.close();
+			/*
+			 *  FIXME 这里要注意,阿里云oss如果指定的Range无效(比如开始位置、结束位置为负数，大于文件大小)，则会下载整个文件；
+			 *  所以这里读取时，判断一下，如果返回的大小和range指定的不一致,那就是返回整个文件了,需重新设置,重新获取.
+			 */
+			long fileLength = object.getObjectMetadata().getContentLength();
+			if ((end - start) != fileLength) {
+				if (start > fileLength) {
+					start = fileLength -1;
+				}
+				end = fileLength;
+				getObjectRequest.setRange(start, end - 1);
+				object = client.getObject(getObjectRequest);
+			}
+			is = object.getObjectContent();
+			byte[] buf = new byte[1024];
+			for (int n = 0; n != -1;) {
+				n = is.read(buf, 0, buf.length);
+//				System.out.println("n=" + n);
+				if (n != -1) {
+//					if (num + n > dst.capacity()) {
+//						num = dst.capacity();
+//						dst.put(buf, 0, dst.capacity() - num);
+//					} else {
+//						num = num + n;
+//						dst.put(buf, 0, n);
+//					}
+					
+					num = num + n;
+					dst.put(buf, 0, n);
+				} 
+			}
+			// num = is.read(dst.array(), dst.position(), dst.limit());
+			position = position + num;
 		} catch (Exception e) {
+			logger.error("position=" + position+ ", dst=" + dst.capacity() + ", num=" + num + ", start=" + start + ", end=" + end, e);
 			num = -1;
+		} finally {
+			is.close();
 		}
 		return num;
 	}
@@ -109,9 +142,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	@Override
 	public int write(ByteBuffer src) throws IOException {
 //		if (ossFileExist) {
-//			throw new RuntimeException("file exist. please delete first! file=" + fileName);
-//		}
-		
+//		throw new RuntimeException("file exist. please delete first! file=" + fileName);
+//	}
+
 		int len = src.remaining();
 		src.position(src.position() + len);
 
@@ -119,21 +152,20 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			tempFile = File.createTempFile(fileName, ".tmp");
 			outputStream = new FileOutputStream(tempFile);
 			uploadId = AliyunOSSUpload.claimUploadId(bucketName, fileName);
-			
+
 			executorService = Executors.newFixedThreadPool(100);
 			completionService = new ExecutorCompletionService<PartETag>(executorService);
 		}
-		
+
 		outputStream.write(src.array(), 0, len);
 		length = length + len;
 		if (length >= UPLOAD_PART_SIZE) {
 			uploadPart(false);
 		}
-		
-		
+
 		return len;
 	}
-	
+
 	private void uploadPart(boolean isEnd) throws IOException {
 		outputStream.flush();
 		outputStream.close();
@@ -146,7 +178,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			outputStream = new FileOutputStream(tempFile);
 		}
 	}
-	
+
 	private synchronized void finish() {
 		if (partNum <= 0) {
 			return;
@@ -172,14 +204,14 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		 * 列出文件所有的分块清单并打印到日志中，该方法仅仅作为输出使用
 		AliyunOSSUpload.listAllParts(uploadId, fileName);
 		 */
-		
+
 		/*
 		 * 完成分块上传
 		 */
 		AliyunOSSUpload.completeMultipartUpload(fileName, lsPartETags, uploadId);
-		
+
 	}
-	
+
 	@Override
 	public long position() throws IOException {
 		return position;
@@ -211,21 +243,21 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	 * @param path
 	 */
 	protected void createDirectory(String path) {
-		if(!path.endsWith("/")) {
+		if (!path.endsWith("/")) {
 			path = path + "/";
 		}
-		
+
 		if (client.doesObjectExist(PathDetailOs.getBucket(), path)) {
 			return;
 		}
-		
-		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
+
+		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[] {}));
 		// add by fans.fan 170110 递归添加文件夹
-		path = path.substring(0, path.length() -1);
+		path = path.substring(0, path.length() - 1);
 		int index = path.lastIndexOf("/");
 		if (index > 0) {
 			createDirectory(path.substring(0, index));
 		}
-		// end by fans.fan 
+		// end by fans.fan
 	}
 }
