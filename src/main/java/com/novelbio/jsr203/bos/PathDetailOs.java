@@ -170,6 +170,17 @@ public class PathDetailOs {
 	public static String getOsMountPathWithSep() {
 		return properties.getProperty("osmount") + "/";
 	}
+
+	public static String getTopicName() {
+		return properties.getProperty("topicName");
+	}
+	
+	public static String getMnsEndpoint() {
+		return properties.getProperty("mnsEndpoint");
+	}
+	
+	
+	
 	
 	/**
 	 * 将文件开头的"//"这种多个的去除
@@ -202,5 +213,6 @@ public class PathDetailOs {
 			throw new RuntimeException("changeOsToLocal error.ossPath=" + ossPath, e);
 		}
 	}
-	
+
+
 }
