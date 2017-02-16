@@ -232,6 +232,9 @@ public class OssFileSystem extends FileSystem {
 		    objectListing = client.listObjects(listObjectsRequest);
 			if (objectListing.getCommonPrefixes() != null && !objectListing.getCommonPrefixes().isEmpty()) {
 				for (String name : objectListing.getCommonPrefixes()) {
+					if (name.endsWith("/")) {
+						name = name.substring(0, name.length() -1);
+					}
 					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + name);
 					lsOssPath.add(fileSystemProvider.getPath(uri));
 				}
@@ -243,7 +246,11 @@ public class OssFileSystem extends FileSystem {
 						// 默认返回内容中有一个ossPath,这个不需要.过滤掉.
 						continue;
 					}
-					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + summary.getKey());
+					String name = summary.getKey();
+					if (name.endsWith("/")) {
+						name = name.substring(0, name.length() -1);
+					}
+					URI uri = new URI("oss://" + PathDetailOs.getBucket() + "/" + name);
 					if (!lsOssPath.contains(fileSystemProvider.getPath(uri))) {
 						lsOssPath.add(fileSystemProvider.getPath(uri));
 					}
