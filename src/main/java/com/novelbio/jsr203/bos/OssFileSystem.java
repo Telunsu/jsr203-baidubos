@@ -465,6 +465,8 @@ public class OssFileSystem extends FileSystem {
 					logger.info("file not exist." + path.getInternalPath());
 					throw new IOException();
 				}
+			} else if(!isExist) {
+				throw new IOException();
 			}
 		} catch (OSSException e) {
 			throw new IOException(e);
