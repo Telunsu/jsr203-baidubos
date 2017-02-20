@@ -6,13 +6,14 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
 import com.aliyun.oss.model.OSSObject;
+import com.aliyun.oss.model.ObjectMetadata;
 
 
 public class OssFileAttrbuteView implements BasicFileAttributeView {
 
 	private final OssPath path;
 	
-	private OSSObject ossObject = null;
+	private ObjectMetadata objectMetadata = null;
 	
 	public OssFileAttrbuteView(OssPath bosPath) {
 		this.path = bosPath;
@@ -29,14 +30,14 @@ public class OssFileAttrbuteView implements BasicFileAttributeView {
 	 */
 	@Override
 	public BasicFileAttributes readAttributes() throws IOException {
-		if (ossObject == null) {
-			ossObject = path.getFileSystem().getOss().getObject(PathDetailOs.getBucket(), path.getInternalPath());
-			if (ossObject == null && !path.getInternalPath().endsWith("/")) {
-				ossObject = path.getFileSystem().getOss().getObject(PathDetailOs.getBucket(), path.getInternalPath() + "/");
+		if (objectMetadata == null) {
+			objectMetadata = path.getFileSystem().getOss().getObjectMetadata(PathDetailOs.getBucket(), path.getInternalPath());
+			if (objectMetadata == null && !path.getInternalPath().endsWith("/")) {
+				objectMetadata = path.getFileSystem().getOss().getObjectMetadata(PathDetailOs.getBucket(), path.getInternalPath() + "/");
 			}
 		}
 		
-		return new OssFileAttributes(ossObject);
+		return new OssFileAttributes(path.getInternalPath(), objectMetadata);
 	}
 
 	/* 

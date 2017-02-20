@@ -43,6 +43,7 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
+import com.aliyun.oss.model.ObjectMetadata;
 
 /**
  * 阿里云oss文件系统
@@ -58,7 +59,7 @@ public class OssFileSystem extends FileSystem {
 	private String host;
 	FileSystemProvider fileSystemProvider;
 	OssFileAttributes ossFileAttributes;
-	OSSObject ossObject = null;
+	ObjectMetadata objectMetadata = null;
 	OSSClient client = OssInitiator.getClient();
 
 	public OssFileSystem(FileSystemProvider fileSystemProvider, URI uri) {
@@ -128,7 +129,7 @@ public class OssFileSystem extends FileSystem {
 		return list;
 	}
 
-	private static final Set<String> supportedFileAttributeViews = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList("bos")));
+	private static final Set<String> supportedFileAttributeViews = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList("oss")));
 	
 	@Override
 	public Set<String> supportedFileAttributeViews() {
@@ -411,6 +412,11 @@ public class OssFileSystem extends FileSystem {
 			//小文件直接拷贝,大文件需分块拷贝.
 			FileCopyer.fileCopy(source.getInternalPath(), target.getInternalPath());
 		}
+		try {
+			ossObject.getObjectContent().close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -438,20 +444,23 @@ public class OssFileSystem extends FileSystem {
 			FileCopyer.fileCopy(source.getInternalPath(), target.getInternalPath());
 		}
 		
+		try {
+			ossObject.getObjectContent().close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		client.deleteObject(PathDetailOs.getBucket(), source.getInternalPath());
 	}
 
 	public <A extends BasicFileAttributes> A readAttributes(OssPath ossPath, Class<A> type, LinkOption[] options) {
-		if (ossObject == null) {
+		if (objectMetadata == null) {
 			if (client.doesObjectExist(PathDetailOs.getBucket(), ossPath.getInternalPath())) {
-				ossObject = client.getObject(PathDetailOs.getBucket(), ossPath.getInternalPath());
-			} else {
-				ossObject = new OSSObject();
-				ossObject.setKey(ossPath.getInternalPath());
+				objectMetadata = client.getObjectMetadata(PathDetailOs.getBucket(), ossPath.getInternalPath());
 			}
 		}
 		if (ossFileAttributes == null) {
-			ossFileAttributes = new OssFileAttributes(ossObject);
+			ossFileAttributes = new OssFileAttributes(ossPath.getInternalPath(), objectMetadata);
 		}
 		return (A) ossFileAttributes;
 	}

@@ -1,5 +1,6 @@
 package com.novelbio.jsr203.bos;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
@@ -12,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.model.OSSObject;
+import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PartETag;
 
 public class FileCopyer {
@@ -31,12 +32,13 @@ public class FileCopyer {
 		ExecutorService executorService = Executors.newFixedThreadPool(10);
 		CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
 		
+		ObjectMetadata ossObjectMetadata = null;
 		try {
 			String uploadId = AliyunOSSCopy.claimUploadId(AliyunOSSCopy.TARGET_BUCKET, target);
 			
-			OSSObject ossObject = client.getObject(AliyunOSSCopy.SOURCE_BUCKET, source);
+			ossObjectMetadata = client.getObjectMetadata(AliyunOSSCopy.SOURCE_BUCKET, source);
 			
-			long length = ossObject.getObjectMetadata().getContentLength();
+			long length = ossObjectMetadata.getContentLength();
 
 			/**
 			 * 将分好的文件块加入到list集合中

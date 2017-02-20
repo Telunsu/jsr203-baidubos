@@ -36,38 +36,38 @@ public class OssFileAttributes implements BasicFileAttributes {
 	/** Internal implementation of file status */
 	private static final Logger logger = LoggerFactory.getLogger(OssFileAttributes.class);
 	
-	private OSSObject ossObject;
 	private static final OSSClient client = OssInitiator.getClient();
+//	private OSSObject ossObject;
+	private String key;
 	private ObjectMetadata objectMetadata;
 	/** 没有找到直接匹配的,找了一个加/后相同的 */
 	private boolean isLikedSummary = false;
 	
-	public OssFileAttributes(OSSObject ossObject) {
-		this.ossObject = ossObject;
-		try {
-			this.objectMetadata = client.getObjectMetadata(OssConfig.getBucket(), this.ossObject.getKey());
-		} catch (OSSException e) {
-			if ("NoSuchKey".equals(e.getErrorCode())) {
-				try {
-					this.objectMetadata = client.getObjectMetadata(OssConfig.getBucket(), this.ossObject.getKey() + "/");
-					if (this.objectMetadata != null) {
-						this.isLikedSummary = true;
-					}
-				} catch (OSSException e2) {
-					logger.warn("no such key.key=" + ossObject.getKey());
+	public OssFileAttributes(String key, ObjectMetadata objectMetadata) {
+		this.key = key;
+		this.objectMetadata = objectMetadata;
+	
+		if (this.objectMetadata == null) {
+			try {
+				this.objectMetadata = client.getObjectMetadata(OssConfig.getBucket(), key + "/");
+				if (this.objectMetadata != null) {
+					this.isLikedSummary = true;
 				}
+			} catch (OSSException e2) {
+				logger.warn("no such key.key=" + key);
 			}
 		}
+		
 	}
 
 	@Override
 	public FileTime creationTime() {
-		return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
+		return FileTime.from(objectMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
 	}
 
 	@Override
 	public Object fileKey() {
-		return this.ossObject.getKey();
+		return this.key;
 	}
 
 	@Override
@@ -82,7 +82,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public boolean isRegularFile() {
-		return !this.ossObject.getKey().endsWith("/");
+		return !this.key.endsWith("/");
 	}
 
 	@Override
@@ -95,7 +95,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 		if (this.objectMetadata != null) {
 			return FileTime.from(this.objectMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
 		} else {
-			return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
+			return FileTime.from(this.objectMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
 		}
 		// bos只有一个最后修改时间
 	}
@@ -103,8 +103,8 @@ public class OssFileAttributes implements BasicFileAttributes {
 	@Override
 	public FileTime lastModifiedTime() {
 		try {
-			if (this.ossObject.getObjectMetadata().getLastModified() != null) {
-				return FileTime.from(this.ossObject.getObjectMetadata().getLastModified().getTime(), TimeUnit.MILLISECONDS);
+			if (this.objectMetadata.getLastModified() != null) {
+				return FileTime.from(this.objectMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
 			} else {
 				return FileTime.from(this.objectMetadata.getLastModified().getTime(), TimeUnit.MILLISECONDS);
 			}
@@ -119,13 +119,13 @@ public class OssFileAttributes implements BasicFileAttributes {
 		if (this.objectMetadata != null) {
 			return this.objectMetadata.getContentLength();
 		} else {
-			return this.ossObject.getObjectMetadata().getContentLength();
+			return -1l;
 		}
 	}
 
 	@Override
 	public String toString() {
-		return "HadoopFileAttributes [ossObject=" + this.ossObject + "]";
+		return "HadoopFileAttributes [ossObject=" + this.key + "]";
 	}
 
 }

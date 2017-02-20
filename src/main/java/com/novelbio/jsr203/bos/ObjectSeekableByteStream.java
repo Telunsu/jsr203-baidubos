@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.model.GetObjectRequest;
 import com.aliyun.oss.model.OSSObject;
+import com.aliyun.oss.model.ObjectMetadata;
 import com.aliyun.oss.model.PartETag;
 
 /**
@@ -37,7 +38,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	 * 上传文件单位分块大小,默认1G TODO
 	 * 这个在本地远程测试效果一般,但考虑将来在阿里patch中每秒60M+的传输速率.特设置这么大,后续可根据需要调整.
 	 */
-	public static final long UPLOAD_PART_SIZE = 100l << 20;
+	public static final long UPLOAD_PART_SIZE = 1l << 30;
 
 	OSSClient client = OssInitiator.getClient();
 	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于100，则多余线程会放入队列中依次执行
@@ -91,12 +92,13 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	public int read(ByteBuffer dst) throws IOException {
 		int num = 0;
 		InputStream is = null;
-		long start = position, end = position + dst.capacity();
+		long start = position, end = position + dst.limit();
+		OSSObject object = null;
 		try {
 			// int dstPos = dst.position();
 			GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
 			getObjectRequest.setRange(start, end - 1);
-			OSSObject object = client.getObject(getObjectRequest);
+			object = client.getObject(getObjectRequest);
 			/*
 			 *  FIXME 这里要注意,阿里云oss如果指定的Range无效(比如开始位置、结束位置为负数，大于文件大小)，则会下载整个文件；
 			 *  所以这里读取时，判断一下，如果返回的大小和range指定的不一致,那就是返回整个文件了,需重新设置,重新获取.
@@ -108,13 +110,14 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 				}
 				end = fileLength;
 				getObjectRequest.setRange(start, end - 1);
+				object.getObjectContent().close();
 				object = client.getObject(getObjectRequest);
 			}
 			is = object.getObjectContent();
-			byte[] buf = new byte[1024];
+			int len = dst.limit() > 1024 ? 1024 : dst.limit();
+			byte[] buf = new byte[len];
 			for (int n = 0; n != -1;) {
 				n = is.read(buf, 0, buf.length);
-//				System.out.println("n=" + n);
 				if (n != -1) {
 //					if (num + n > dst.capacity()) {
 //						num = dst.capacity();
@@ -134,6 +137,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			logger.error("position=" + position+ ", dst=" + dst.capacity() + ", num=" + num + ", start=" + start + ", end=" + end, e);
 			num = -1;
 		} finally {
+			object.getObjectContent().close();
 			is.close();
 		}
 		return num;
@@ -228,8 +232,8 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	@Override
 	public long size() throws IOException {
 		GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
-		OSSObject object = client.getObject(getObjectRequest);
-		return object.getObjectMetadata().getContentLength();
+		ObjectMetadata objectMetadata = client.getObjectMetadata(getObjectRequest);
+		return objectMetadata.getContentLength();
 	}
 
 	@Override
