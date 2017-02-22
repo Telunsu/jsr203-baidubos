@@ -92,7 +92,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	public int read(ByteBuffer dst) throws IOException {
 		int num = 0;
 		InputStream is = null;
-		long start = position, end = position + dst.limit();
+		long start = position, end = position + dst.remaining();
 		OSSObject object = null;
 		try {
 			// int dstPos = dst.position();
@@ -114,24 +114,15 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 				object = client.getObject(getObjectRequest);
 			}
 			is = object.getObjectContent();
-			int len = dst.limit() > 1024 ? 1024 : dst.limit();
+			int len = dst.remaining() > 1024 ? 1024 : dst.remaining();
 			byte[] buf = new byte[len];
 			for (int n = 0; n != -1;) {
 				n = is.read(buf, 0, buf.length);
 				if (n != -1) {
-//					if (num + n > dst.capacity()) {
-//						num = dst.capacity();
-//						dst.put(buf, 0, dst.capacity() - num);
-//					} else {
-//						num = num + n;
-//						dst.put(buf, 0, n);
-//					}
-					
 					num = num + n;
 					dst.put(buf, 0, n);
 				} 
 			}
-			// num = is.read(dst.array(), dst.position(), dst.limit());
 			position = position + num;
 		} catch (Exception e) {
 			logger.error("position=" + position+ ", dst=" + dst.capacity() + ", num=" + num + ", start=" + start + ", end=" + end, e);

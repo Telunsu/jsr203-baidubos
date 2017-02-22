@@ -404,18 +404,13 @@ public class OssFileSystem extends FileSystem {
 		createDirectory(((OssPath)target.getParent()).getInternalPath(), null);
 		// end by fans.fan
 		
-		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.getInternalPath());
-		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
+		ObjectMetadata objectMetadata = client.getObjectMetadata(PathDetailOs.getBucket(), source.getInternalPath());
+		if (objectMetadata.getContentLength() < FileCopyer.PART_SIZE_UNIT) {
 			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.getInternalPath(), PathDetailOs.getBucket(), target.getInternalPath());
 			client.copyObject(copyObjectRequest);
 		} else {
 			//小文件直接拷贝,大文件需分块拷贝.
 			FileCopyer.fileCopy(source.getInternalPath(), target.getInternalPath());
-		}
-		try {
-			ossObject.getObjectContent().close();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -436,18 +431,12 @@ public class OssFileSystem extends FileSystem {
 		createDirectory(((OssPath)target.getParent()).getInternalPath(), null);
 		// end by fans.fan
 				
-		OSSObject ossObject = client.getObject(PathDetailOs.getBucket(), source.getInternalPath());
-		if (ossObject.getObjectMetadata().getContentLength() < FileCopyer.PART_SIZE_UNIT) {
+		ObjectMetadata objectMetadata = client.getObjectMetadata(PathDetailOs.getBucket(), source.getInternalPath());
+		if (objectMetadata.getContentLength() < FileCopyer.PART_SIZE_UNIT) {
 			CopyObjectRequest copyObjectRequest = new CopyObjectRequest(PathDetailOs.getBucket(), source.getInternalPath(), PathDetailOs.getBucket(), target.getInternalPath());
 			client.copyObject(copyObjectRequest);
 		} else {
 			FileCopyer.fileCopy(source.getInternalPath(), target.getInternalPath());
-		}
-		
-		try {
-			ossObject.getObjectContent().close();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
 		
 		client.deleteObject(PathDetailOs.getBucket(), source.getInternalPath());
