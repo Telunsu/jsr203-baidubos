@@ -309,12 +309,28 @@ public class OssFileSystem extends FileSystem {
 		return this.client;
 	}
 	
-	/** 只能删除文件，文件夹会全部删除 */
+	/** 删除文件，文件夹会全部删除 */
 	protected void deleteFile(OssPath path) {
 		try {
+			Boolean isFileExist = null;
+			if (!path.getInternalPath().endsWith("/")) {
+				isFileExist = client.doesObjectExist(PathDetailOs.getBucket(), path.getInternalPath());
+				if (isFileExist) {
+					//是文件就直接删除
+					client.deleteObject(PathDetailOs.getBucket(), path.getInternalPath());
+					return;
+				}
+			}
+			
+			String prefix = path.getInternalPath();
+			if (isFileExist != null) {
+				//不等于null，说明查过了，但没查到
+				prefix = prefix + "/";
+			}
+			
 			ListObjectsRequest listObjectsRequest = new ListObjectsRequest(PathDetailOs.getBucket());
 			// 列出根目录下的所有文件和文件夹
-			listObjectsRequest.setPrefix(path.getInternalPath());
+			listObjectsRequest.setPrefix(prefix);
 			listObjectsRequest.setMaxKeys(1000);
 			String nextMarker = null;
 			ObjectListing objectListing = null;
