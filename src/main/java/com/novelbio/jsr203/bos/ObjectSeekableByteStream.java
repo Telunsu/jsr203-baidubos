@@ -72,7 +72,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public void close() throws IOException {
-		if (length > 0) {
+		if (length >= 0) {
 			uploadPart(true);
 		}
 
@@ -162,8 +162,16 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	}
 
 	private void uploadPart(boolean isEnd) throws IOException {
-		outputStream.flush();
-		outputStream.close();
+		if (outputStream != null) {
+			outputStream.flush();
+			outputStream.close();
+		} else {
+			tempFile = File.createTempFile(fileName, ".tmp");
+			outputStream = new FileOutputStream(tempFile);
+			uploadId = AliyunOSSUpload.claimUploadId(bucketName, fileName);
+			executorService = Executors.newFixedThreadPool(100);
+			completionService = new ExecutorCompletionService<PartETag>(executorService);
+		}
 		partNum++;
 		// 线程执行。将分好的文件块加入到list集合中
 		completionService.submit(new AliyunOSSUpload(tempFile, 0, length, partNum, uploadId, fileName, true));
