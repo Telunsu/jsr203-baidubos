@@ -52,6 +52,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 				this.objectMetadata = client.getObjectMetadata(OssConfig.getBucket(), key + "/");
 				if (this.objectMetadata != null) {
 					this.isLikedSummary = true;
+					this.key = key + "/";
 				}
 			} catch (OSSException e2) {
 				logger.warn("no such key.key=" + key);
@@ -72,7 +73,7 @@ public class OssFileAttributes implements BasicFileAttributes {
 
 	@Override
 	public boolean isDirectory() {
-		return isLikedSummary ? true : objectMetadata != null && objectMetadata.getContentLength() == 0;
+		return isLikedSummary ? true : (objectMetadata != null && key.endsWith("/"));
 	}
 
 	@Override
