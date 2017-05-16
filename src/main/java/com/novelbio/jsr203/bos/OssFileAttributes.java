@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
-import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
 
 /**

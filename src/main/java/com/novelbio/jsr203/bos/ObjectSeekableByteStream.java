@@ -72,7 +72,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public void close() throws IOException {
-		if (length >= 0) {
+		if (length > 0 || (length == 0 && !ossFileExist)) {
 			uploadPart(true);
 		}
 
@@ -80,12 +80,12 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 		if (executorService != null) {
 			executorService.shutdown();
+			int index = this.fileName.lastIndexOf("/");
+			if (index > 0) {
+				createDirectory(this.fileName.substring(0, index));
+			}
 		}
-
-		int index = this.fileName.lastIndexOf("/");
-		if (index > 0) {
-			createDirectory(this.fileName.substring(0, index));
-		}
+		
 	}
 
 	@Override
