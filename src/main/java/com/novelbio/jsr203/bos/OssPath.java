@@ -656,6 +656,11 @@ public class OssPath implements Path {
 		this.ossFileSystem.readAttributes(this, modes);
 	}
 	
+	/**
+	 * 对应阿里云oss的key的路径格式.也就是不带前缀了.
+	 * 
+	 * @return
+	 */
 	public String getInternalPath() {
 		if (internalPath != null && internalPath.startsWith("/")) {
 			return internalPath.substring(1);
