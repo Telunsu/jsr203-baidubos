@@ -230,6 +230,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 
 	@Override
 	public long size() throws IOException {
+		if (!client.doesObjectExist(bucketName, fileName)) {
+			throw new RuntimeException("file is not exist. file=" + fileName);
+		}
 		GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
 		ObjectMetadata objectMetadata = client.getObjectMetadata(getObjectRequest);
 		return objectMetadata.getContentLength();

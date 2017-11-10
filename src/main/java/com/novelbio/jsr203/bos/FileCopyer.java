@@ -26,7 +26,7 @@ public class FileCopyer {
 	protected static OSSClient client = OssInitiator.getClient();
 	
 	public static void fileCopy(String source, String target) {
-		System.out.println("copy file " + source + " to " + target);
+		logger.debug("copy file " + source + " to " + target);
 		
 		// 创建一个可重用固定线程数的线程池。若同一时间线程数大于10，则多余线程会放入队列中依次执行
 		ExecutorService executorService = Executors.newFixedThreadPool(10);

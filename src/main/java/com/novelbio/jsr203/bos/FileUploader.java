@@ -27,7 +27,7 @@ public class FileUploader {
 	protected static OSSClient client = OssInitiator.getClient();
 
 	public static void fileUpload(File file, String key) {
-		System.out.println("upload file " + file.getName());
+		logger.debug("upload file " + file.getName());
 		
 		// 创建一个可重用固定线程数的线程池。若同一时间线程数大于10，则多余线程会放入队列中依次执行
 		ExecutorService executorService = Executors.newFixedThreadPool(3);
