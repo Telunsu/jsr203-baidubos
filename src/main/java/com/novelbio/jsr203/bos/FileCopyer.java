@@ -59,10 +59,9 @@ public class FileCopyer {
 			for (int i = 0; i < partCount; i++) {
 				try {
 					PartETag partETag = completionService.take().get();
-					logger.info("线程{}运行结束", i);
+					logger.debug("thread {} finished.", i);
 					lsPartETags.add(partETag);
 				} catch (InterruptedException | ExecutionException e) {
-					System.err.printf("并发处理异常：%s\n", e.getMessage());
 					logger.error("execute executeUpload error.", e);
 					// XXX 一旦并发异常，程序就卡死在这里，需要处理
 				}
@@ -82,7 +81,7 @@ public class FileCopyer {
 //			return endpoint + "/" + bucketName + "/" + client.getObject(bucketName, key).getKey();
 
 		} catch (Exception e) {
-			logger.error("上传失败！", e);
+			logger.error("upload failed！", e);
 			throw e;
 		} finally {
 			executorService.shutdown();

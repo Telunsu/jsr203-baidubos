@@ -70,7 +70,7 @@ public class AliyunOSSCopy implements Callable<PartETag> {
 			uploadPartCopyRequest.setPartNumber(partNumber);
 
 			UploadPartCopyResult uploadPartResult = client.uploadPartCopy(uploadPartCopyRequest);
-			logger.info("Part#" + this.partNumber + " done\n");
+			logger.debug("Part# {} done", this.partNumber);
 			
 			return uploadPartResult.getPartETag();
 		} catch (Exception e) {
