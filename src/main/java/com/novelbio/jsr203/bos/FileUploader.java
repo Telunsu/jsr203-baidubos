@@ -9,22 +9,45 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.qcloud.cos.exception.CosClientException;
+import com.qcloud.cos.exception.CosServiceException;
+import com.qcloud.cos.model.*;
+import com.qcloud.cos.transfer.TransferManager;
+import com.qcloud.cos.transfer.Upload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.model.DownloadFileRequest;
-import com.aliyun.oss.model.OSSObject;
-import com.aliyun.oss.model.ObjectListing;
-import com.aliyun.oss.model.PartETag;
-import com.aliyun.oss.model.UploadFileRequest;
+import com.qcloud.cos.COSClient;
 
 public class FileUploader {
 
 	private static Logger logger = LoggerFactory.getLogger(FileCopyer.class);
 
 	// 创建OSSClient实例
-	protected static OSSClient client = OssInitiator.getClient();
+	protected static COSClient client = CosInitiator.getClient();
+
+	// COS提供的高级接口, 无需自己选择如何分片
+	public static void fileUpload(File file, String bucket, String key) {
+		logger.debug("upload file " + file.getName());
+		ExecutorService threadPool = Executors.newFixedThreadPool(3);
+		TransferManager transferManager = new TransferManager(client, threadPool);
+
+		PutObjectRequest putObjectRequest = new PutObjectRequest(bucket, key, file);
+		try {
+			// 返回一个异步结果Upload, 可同步的调用waitForUploadResult等待upload结束, 成功返回UploadResult, 失败抛出异常.
+			Upload upload = transferManager.upload(putObjectRequest);
+
+			UploadResult uploadResult = upload.waitForUploadResult();
+		} catch (CosServiceException e) {
+			e.printStackTrace();
+		} catch (CosClientException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		transferManager.shutdownNow();
+	}
 
 	public static void fileUpload(File file, String key) {
 		logger.debug("upload file " + file.getName());
@@ -34,7 +57,7 @@ public class FileUploader {
 		CompletionService<PartETag> completionService = new ExecutorCompletionService<PartETag>(executorService);
 		
 		try {
-			String uploadId = AliyunOSSUpload.claimUploadId(PathDetailOs.getBucket(), key);
+			String uploadId = TencentCOSUpload.claimUploadId(PathDetailOs.getBucket(), key);
 			// 设置分块大小
 			final long partSize = ObjectSeekableByteStream.UPLOAD_PART_SIZE;
 			// 计算分块数目
@@ -59,7 +82,7 @@ public class FileUploader {
 				long curPartSize = (i + 1 == partCount) ? (fileLength - startPos) : partSize;
 				
 				// 线程执行。将分好的文件块加入到list集合中
-				completionService.submit(new AliyunOSSUpload(file, startPos, curPartSize, i + 1, uploadId, key, false));
+				completionService.submit(new TencentCOSUpload(file, startPos, curPartSize, i + 1, uploadId, key, false));
 			}
 
 //			/**
@@ -108,7 +131,7 @@ public class FileUploader {
 			/*
 			 * 完成分块上传
 			 */
-			AliyunOSSUpload.completeMultipartUpload(file.getName(), lsPartETags, uploadId);
+			TencentCOSUpload.completeMultipartUpload(file.getName(), lsPartETags, uploadId);
 			
 			// 返回上传文件的URL地址
 //			return endpoint + "/" + bucketName + "/" + client.getObject(bucketName, key).getKey();

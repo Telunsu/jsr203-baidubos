@@ -7,8 +7,8 @@ import java.util.Properties;
 
 public class PathDetailOs {
 	private static Properties properties;
-	
-	private static String OBJECT_SAVE_SERVICE = null;
+
+	private static String OBJECT_SAVE_SERVICE = "cos";
 	private static String STS_DOMAIN = null;
 	private static String ACCESS_KEY_ID = null;
 	private static String ACCESS_KEY_SECRET = null;
@@ -20,7 +20,6 @@ public class PathDetailOs {
 	
 	static {
 		initial();
-		
 		OBJECT_SAVE_SERVICE = properties.getProperty("CLIENT_OBJECT_SAVE_SERVICE");
 		STS_DOMAIN = properties.getProperty("CLIENT_STS_DOMAIN");
 		ACCESS_KEY_ID = properties.getProperty("CLIENT_ACCESS_KEY_ID");
@@ -32,6 +31,7 @@ public class PathDetailOs {
 		CLIENT_BUCKET = properties.getProperty("CLIENT_BUCKET");
 	}
 	private static void initial() {
+
 		String configPath = "configoss.properties";
 		InputStream in = PathDetailOs.class.getClassLoader().getResourceAsStream(configPath);
 		properties = new Properties();
@@ -54,7 +54,8 @@ public class PathDetailOs {
 	
 
 	public static String getRegionId() {
-		return properties.getProperty("regionId");
+		// return properties.getProperty("regionId");
+		return REGION_ID;
 	}
 
 	/**
@@ -63,7 +64,8 @@ public class PathDetailOs {
 	 * @return
 	 */
 	public static String getImageId() {
-		return properties.getProperty("imageId");
+		// return properties.getProperty("imageId");
+		return "IMAGE";
 	}
 	
 	/** 
@@ -203,12 +205,12 @@ public class PathDetailOs {
 	}
 	
 	public static String changeOsToLocal(String ossPath) {
-		String osHead = OssFileSystemProvider.SCHEME + "://";
+		String osHead = CosFileSystemProvider.SCHEME + "://";
 		if (!ossPath.startsWith(osHead)) {
 			return ossPath;
 		}
 		try {
-			return  getOsMountPathWithSep() + ((OssPath)new OssFileSystemProvider().getPath(new URI(ossPath))).getInternalPath();
+			return  getOsMountPathWithSep() + ((CosPath)new CosFileSystemProvider().getPath(new URI(ossPath))).getInternalPath();
 		} catch (Exception e) {
 			throw new RuntimeException("changeOsToLocal error.ossPath=" + ossPath, e);
 		}

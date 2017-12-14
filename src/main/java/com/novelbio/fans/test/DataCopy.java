@@ -1,29 +1,27 @@
 package com.novelbio.fans.test;
 
+import java.io.File;
 import java.util.List;
 
+import com.novelbio.jsr203.bos.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
 
-import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.model.ListObjectsRequest;
-import com.aliyun.oss.model.OSSObjectSummary;
-import com.aliyun.oss.model.ObjectListing;
-import com.novelbio.jsr203.bos.AliyunOSSCopy;
-import com.novelbio.jsr203.bos.FileCopyer;
-import com.novelbio.jsr203.bos.OssInitiator;
-import com.novelbio.jsr203.bos.PathDetailOs;
+import com.qcloud.cos.COSClient;
+import com.qcloud.cos.model.ListObjectsRequest;
+import com.qcloud.cos.model.COSObjectSummary;
+import com.qcloud.cos.model.ObjectListing;
 
 public class DataCopy {
 
-	private static OSSClient ossClient = OssInitiator.getClient();
+	private static COSClient cosClient = CosInitiator.getClient();
 	
 	/** 500M */
 	public static final long FILE_SIZE = 500l << 20;
 	
 	public static void main(String[] args) {
-		
+		/**
 		Options opts = new Options();
 		opts.addOption("source", true, "source");
 		opts.addOption("target", true, "target");
@@ -37,32 +35,40 @@ public class DataCopy {
 		}
 		
 		String source = cliParser.getOptionValue("source");
-		String target = cliParser.getOptionValue("target");
+		String target = cliParser.getOptionValue("target");*/
 		
 		final int maxKeys = 1000;
 		String nextMarker = null;
 		ObjectListing objectListing;
 		long counts = 0l;
-		
-//		String source = "nbCloud/public/nbcplatform/genome/Database/PolyphenDatabase/precomputed/";
-//		String target = "nbCloud/public/taskdatabase/polyphen2/precomputed/";
+
+		/*
+		String source = "multi_form";
+		String target = "sevenyou/";
+		System.out.println("bucket=" + PathDetailOs.getBucket());
 		do {
-			System.out.println("nextMarker=" + nextMarker);
-		    objectListing = ossClient.listObjects(new ListObjectsRequest(PathDetailOs.getBucket()).withPrefix(source).withMarker(nextMarker).withMaxKeys(maxKeys));
-		    List<OSSObjectSummary> sums = objectListing.getObjectSummaries();
-		    for (OSSObjectSummary s : sums) {
+		    objectListing = cosClient.listObjects(new ListObjectsRequest().withBucketName(PathDetailOs.getBucket()).withPrefix(source).withMarker(nextMarker).withMaxKeys(maxKeys));
+		    List<COSObjectSummary> sums = objectListing.getObjectSummaries();
+		    for (COSObjectSummary s : sums) {
 		    	counts++;
 		    	String targetKey = s.getKey().replace(source, target);
+				System.out.println(s.getKey() + "->" + targetKey);
 		    	if (s.getSize() < FILE_SIZE) {
-		    		System.out.println(s.getKey() + "->" + targetKey);
-		    		ossClient.copyObject(AliyunOSSCopy.SOURCE_BUCKET, s.getKey(), AliyunOSSCopy.TARGET_BUCKET, targetKey);
+		    		cosClient.copyObject(TencentCOSCopy.SOURCE_BUCKET, s.getKey(), TencentCOSCopy.DEST_BUCKET, targetKey);
 				} else {
-					FileCopyer.fileCopy(s.getKey(), targetKey);
+		    		// 这里演示的是同地域复制
+
 				}
 		    }
 		    nextMarker = objectListing.getNextMarker();
 		} while (objectListing.isTruncated());
-		
+
+
+		FileCopyer.filePartCopy("ap-guangzhou", "sevenyousouth-1251668577",
+				"seven_10G.tmp", TencentCOSCopy.DEST_BUCKET, "sevenyou_10G.tmp.copy2", 10);
+*/
+		File file = new File("D:\\vim.tar");
+		FileUploader.fileUpload(file, "sevenyoutest-1251668577", "sevenyou.vim");
 		System.out.println("总文件数量=" + counts);
 		
 	}
@@ -78,9 +84,9 @@ public class DataCopy {
 //		}
 //		
 //		setKeys.add(path);
-//		if (!ossClient.doesObjectExist(PathDetailOs.getBucket(), path)) {
+//		if (!cosClient.doesObjectExist(PathDetailOs.getBucket(), path)) {
 //			System.out.println("add object " + path);
-//			ossClient.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
+//			cosClient.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[]{}));
 //		}
 //		// add by fans.fan 170110 递归添加文件夹
 //		path = path.substring(0, path.length() -1);

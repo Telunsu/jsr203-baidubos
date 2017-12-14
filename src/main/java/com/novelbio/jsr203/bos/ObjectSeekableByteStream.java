@@ -16,14 +16,11 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.qcloud.cos.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.aliyun.oss.OSSClient;
-import com.aliyun.oss.model.GetObjectRequest;
-import com.aliyun.oss.model.OSSObject;
-import com.aliyun.oss.model.ObjectMetadata;
-import com.aliyun.oss.model.PartETag;
+import com.qcloud.cos.COSClient;
 
 /**
  * 用于阿里云oss的随机读功能
@@ -40,7 +37,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 	 */
 	public static final long UPLOAD_PART_SIZE = 1l << 30;
 
-	OSSClient client = OssInitiator.getClient();
+	COSClient client = CosInitiator.getClient();
 	// 创建一个可重用固定线程数的线程池。若同一时间线程数大于100，则多余线程会放入队列中依次执行
 	ExecutorService executorService = null;
 	CompletionService<PartETag> completionService = null;
@@ -93,7 +90,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		int num = 0;
 		InputStream is = null;
 		long start = position, end = position + dst.remaining();
-		OSSObject object = null;
+		COSObject object = null;
 		try {
 			// int dstPos = dst.position();
 			GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
@@ -146,7 +143,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		if (outputStream == null) {
 			tempFile = File.createTempFile(fileName, ".tmp");
 			outputStream = new FileOutputStream(tempFile);
-			uploadId = AliyunOSSUpload.claimUploadId(bucketName, fileName);
+			uploadId = TencentCOSUpload.claimUploadId(bucketName, fileName);
 
 			executorService = Executors.newFixedThreadPool(100);
 			completionService = new ExecutorCompletionService<PartETag>(executorService);
@@ -168,13 +165,13 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		} else {
 			tempFile = File.createTempFile(fileName, ".tmp");
 			outputStream = new FileOutputStream(tempFile);
-			uploadId = AliyunOSSUpload.claimUploadId(bucketName, fileName);
+			uploadId = TencentCOSUpload.claimUploadId(bucketName, fileName);
 			executorService = Executors.newFixedThreadPool(100);
 			completionService = new ExecutorCompletionService<PartETag>(executorService);
 		}
 		partNum++;
 		// 线程执行。将分好的文件块加入到list集合中
-		completionService.submit(new AliyunOSSUpload(tempFile, 0, length, partNum, uploadId, fileName, true));
+		completionService.submit(new TencentCOSUpload(tempFile, 0, length, partNum, uploadId, fileName, true));
 		length = 0;
 		if (!isEnd) {
 			tempFile = File.createTempFile(fileName, ".tmp");
@@ -211,7 +208,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		/*
 		 * 完成分块上传
 		 */
-		AliyunOSSUpload.completeMultipartUpload(fileName, lsPartETags, uploadId);
+		TencentCOSUpload.completeMultipartUpload(fileName, lsPartETags, uploadId);
 
 	}
 
@@ -233,8 +230,9 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 		if (!client.doesObjectExist(bucketName, fileName)) {
 			throw new RuntimeException("file is not exist. file=" + fileName);
 		}
-		GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
-		ObjectMetadata objectMetadata = client.getObjectMetadata(getObjectRequest);
+		//GetObjectRequest getObjectRequest = new GetObjectRequest(bucketName, fileName);
+		GetObjectMetadataRequest getObjectMetadataRequest = new GetObjectMetadataRequest(bucketName, fileName);
+		ObjectMetadata objectMetadata = client.getObjectMetadata(getObjectMetadataRequest);
 		return objectMetadata.getContentLength();
 	}
 
@@ -257,7 +255,7 @@ public class ObjectSeekableByteStream implements SeekableByteChannel {
 			return;
 		}
 
-		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[] {}));
+		client.putObject(PathDetailOs.getBucket(), path, new ByteArrayInputStream(new byte[] {}), null);
 		// add by fans.fan 170110 递归添加文件夹
 		path = path.substring(0, path.length() - 1);
 		int index = path.lastIndexOf("/");
